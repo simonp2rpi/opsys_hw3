@@ -15,6 +15,12 @@ extern char **words;
 pthread_mutex_t lock;
 int server_running = 1; // Flag to control server loop
 
+void handle_sigusr1(int sig);
+void load_dictionary(const char* filename, int num_words);
+void* handle_client(void* arg);
+char* process_guess(const char* guess, const char* hidden_word, int* guesses_left);
+int wordle_server(int argc, char **argv);
+
 void handle_sigusr1(int sig) {
     server_running = 0; // Stop the server loop
     printf("MAIN: SIGUSR1 received; Wordle server shutting down...\n");
