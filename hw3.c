@@ -234,10 +234,14 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    printf("MAIN: seeded pseudo-random number generator with %d/n", seed);
+    printf("MAIN: seeded pseudo-random number generator with %d\n", seed);
     printf("MAIN: Wordle server listening on port {%d}\n", port);
 
-    while (server_running) {
+    if(server_running != 1){
+        printf("no");
+    }
+
+    while (server_running == 1) {
         printf("is this working");
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
