@@ -186,7 +186,7 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    int port = atoi(argv[1]);
+    int port = atoi(argv[1]);  // Use the port specified in the arguments
     int seed = atoi(argv[2]);
     const char* dictionary_file = argv[3];
     int num_words = atoi(argv[4]);
@@ -227,7 +227,7 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    // Start listening
+    // Listen for connections
     if (listen(server_socket, 5) < 0) {
         perror("ERROR: listen() failed");
         close(server_socket);
@@ -237,36 +237,30 @@ int wordle_server(int argc, char **argv) {
     printf("MAIN: seeded pseudo-random number generator with %d\n", seed);
     printf("MAIN: Wordle server listening on port {%d}\n", port);
 
-    while (server_running == 1) {
-        printf("MAIN: rcvd incoming connection request\n");
+    while (server_running) {
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
-        int* client_socket = malloc(sizeof(int));
-        if (!client_socket) {
-            perror("ERROR: malloc() failed");
-            continue;
-        }
 
+        int *client_socket = malloc(sizeof(int));
         *client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
         if (*client_socket < 0) {
             perror("ERROR: accept() failed");
             free(client_socket);
-            continue;
+            break;
         }
 
-        pthread_t thread;
-        pthread_create(&thread, NULL, handle_client, client_socket);
-        pthread_detach(thread); // No need to join
+        printf("MAIN: rcvd incoming connection request\n");
+
+        pthread_t tid;
+        if (pthread_create(&tid, NULL, handle_client, (void*)client_socket) != 0) {
+            perror("ERROR: pthread_create() failed");
+            close(*client_socket);
+            free(client_socket);
+            break;
+        }
     }
 
-    // Cleanup
     close(server_socket);
     pthread_mutex_destroy(&lock);
-    for (int i = 0; words[i]; i++) {
-        free(words[i]);
-    }
-    free(words);
-
-    printf("MAIN: Wordle server shut down successfully\n");
     return EXIT_SUCCESS;
 }
