@@ -237,12 +237,8 @@ int wordle_server(int argc, char **argv) {
     printf("MAIN: seeded pseudo-random number generator with %d\n", seed);
     printf("MAIN: Wordle server listening on port {%d}\n", port);
 
-    if(server_running != 1){
-        printf("no");
-    }
-
     while (server_running == 1) {
-        printf("is this working");
+        printf("MAIN: rcvd incoming connection request\n");
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
         int* client_socket = malloc(sizeof(int));
