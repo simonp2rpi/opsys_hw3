@@ -98,10 +98,8 @@ void* handle_client(void* arg) {
         char* reply = process_guess(guess, hidden_word, &guesses_left);
         if (reply == NULL) {
             // Invalid guess
-            printf("THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses_left);
             send(client_socket, "N?????\0", 8, 0);
         } else {
-            printf("THREAD %lu: sending reply: %s (%d guesses left)\n", (unsigned long)thread_id, reply, guesses_left);
             send(client_socket, reply, 8, 0);
             free(reply);
 
@@ -143,6 +141,7 @@ char* process_guess(const char* guess, const char* hidden_word, int* guesses_lef
     }
 
     if (!valid_guess) {
+        printf("THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses_left);
         strcpy(reply, "N?????");
         return reply; // Invalid guess
     }
@@ -177,7 +176,7 @@ char* process_guess(const char* guess, const char* hidden_word, int* guesses_lef
         }
     }
 
-    printf(reply + 1, "%02d%s", *guesses_left, result);
+    printf("THREAD %lu: sending reply: %s (%d guesses left)\n", (unsigned long)thread_id, reply, guesses_left);
     return reply;
 }
 
