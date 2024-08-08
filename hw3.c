@@ -92,7 +92,9 @@ void* handle_client(void* arg) {
 
         char* reply = guessWord(guess, hidden_word, &guesses);
         if (reply == NULL) {
-            send(client_socket, "N?????\0", 8, 0);
+            char * sendWrong = calloc(9, sizeof(char));
+            sprintf(sendInval, "N0%d?????", guesses);
+            send(client_socket, sendInval, 8, 0);
         } else {
             send(client_socket, reply, 8, 0);
             free(reply);
