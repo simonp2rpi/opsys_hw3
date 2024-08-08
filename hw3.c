@@ -7,9 +7,9 @@
 #include <signal.h>
 #include <ctype.h>
 
-extern int total_guesses;
-extern int total_wins;
-extern int total_losses;
+extern int validGuess;
+extern int wins;
+extern int losses;
 extern char **words;
 
 pthread_mutex_t lock;
@@ -23,6 +23,11 @@ int wordle_server(int argc, char **argv);
 void sigusr1(int sig) {
     on = 0; 
     printf("MAIN: SIGUSR1 received; Wordle server shutting down...\n");
+    printf("MAIN: valid guesses: %d\n", validGuess);
+    printf("MAIN: win/loss: %d/%d\n", wins, losses);
+    for (int i = 0; *(words+i); i++) {
+        printf("MAIN: word #%d: %s\n", i+1, *(words+i));
+    }
 }
 
 void* handle_client(void* arg) {
@@ -32,7 +37,7 @@ void* handle_client(void* arg) {
     pthread_t thread_id = pthread_self();
 
     pthread_mutex_lock(&lock);
-    const char* hidden_word = *(words+(rand() % (total_guesses + 1)));
+    const char* hidden_word = *(words+(rand() % (validGuess + 1)));
     pthread_mutex_unlock(&lock);
 
     int guesses = 6;
@@ -44,7 +49,7 @@ void* handle_client(void* arg) {
             printf("THREAD %lu: client gave up; closing TCP connection...\n", (unsigned long)thread_id);
             pthread_mutex_lock(&lock);
             pthread_mutex_unlock(&lock);
-            total_losses++;
+            losses++;
             close(csocket);
             pthread_exit(NULL);
         }
@@ -63,7 +68,7 @@ void* handle_client(void* arg) {
         
         pthread_mutex_lock(&lock);
         pthread_mutex_unlock(&lock);
-        total_guesses++;
+        validGuess++;
 
         //only if valid guess
         if(valid){
@@ -79,13 +84,13 @@ void* handle_client(void* arg) {
             if (strcmp(guess, hidden_word) == 0) {
                 printf("THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
                 pthread_mutex_lock(&lock);
-                total_wins++;
+                wins++;
                 pthread_mutex_unlock(&lock);
                 break;
             } else if (guesses == 0) {
                 printf("THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
                 pthread_mutex_lock(&lock);
-                total_losses++;
+                losses++;
                 pthread_mutex_unlock(&lock);
                 break;
             }
