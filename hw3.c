@@ -62,22 +62,25 @@ void* handle_client(void* arg) {
             }
         }
         printf("THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
-        if(!valid){
-            printf("THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
-        }
         
         pthread_mutex_lock(&lock);
         pthread_mutex_unlock(&lock);
-        validGuess++;
 
         //only if valid guess
         if(valid){
+            validGuess++;
             printf("THREAD %lu: sending reply: ", (unsigned long)thread_id);
+        }
+        else if(!valid){
+            printf("THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
         }
 
         char* wordle = guessWord(guess, hidden_word, &guesses);
         if (wordle == NULL) {
-            send(csocket, "N?????\0", 8, 0);
+            char * sendInval = calloc(9, sizeof(char));
+            sprintf(sendInval, "N%02d?????", guesses);
+            send(csocket, sendInval, 8, 0);
+            free(sendInval);
         } else {
             send(csocket, wordle, 8, 0);
             free(wordle);
@@ -117,8 +120,9 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
     }
 
     if (!valid) {
-        strcpy(wordle, "N?????");
-        return wordle; 
+        *(reply+0) = 'N';
+        sprintf(reply + 1, "%02d?????", *guesses_left);
+        return reply; 
     }
 
     *(wordle+0) = 'Y';
