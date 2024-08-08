@@ -30,7 +30,6 @@ void* handle_client(void* arg) {
     free(arg);
 
     pthread_t thread_id = pthread_self();
-    printf("THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
 
     pthread_mutex_lock(&lock);
     const char* hidden_word = *(words+(rand() % (total_guesses + 1)));
@@ -39,6 +38,7 @@ void* handle_client(void* arg) {
     int guesses = 6;
     char *guess = calloc(6,sizeof(char));
     while (guesses > 0) {
+        printf("THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
         int bytes_received = recv(csocket, guess, 5, 0);
         if (bytes_received <= 0) {
             printf("THREAD %lu: client gave up; closing TCP connection...\n", (unsigned long)thread_id);
@@ -50,12 +50,17 @@ void* handle_client(void* arg) {
         }
 
         *(guess+5) = '\0'; 
-        printf("THREAD %lu: received guess: %s\n", (unsigned long)thread_id, guess);
+        //check if it is in dictionary
+        printf("THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
+        //else: // printf("THREAD %lu: invalid guess; sending reply: ?????", (unsigned long)thread_id);
 
         pthread_mutex_lock(&lock);
         pthread_mutex_unlock(&lock);
         total_guesses++;
 
+        //only if valid guess
+        printf("THREAD %lu: sending reply: ", (unsigned long)thread_id);
+        
         char* wordle = guessWord(guess, hidden_word, &guesses);
         if (wordle == NULL) {
             send(csocket, "N?????\0", 8, 0);
@@ -129,6 +134,7 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
     }
 
     sprintf(wordle + 1, "%02d%s", *guesses_left, result);
+    printf("%s  (%d guesses left)\n", result, *guesses_left);
     return wordle;
 }
 
@@ -139,7 +145,6 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    int port = atoi(*(argv+1));
     int seed = atoi(*(argv+2));
     int numWords = atoi(*(argv+4));
 
@@ -176,8 +181,6 @@ int wordle_server(int argc, char **argv) {
     *(words+i) = NULL; 
     fclose(file);
     printf("MAIN: opened %s (%d words)\n", *(argv+3), i);
-
-
     if (pthread_mutex_init(&lock, NULL) != 0) {
         perror("ERROR: pthread_mutex_init() failed");
         return EXIT_FAILURE;
@@ -199,7 +202,7 @@ int wordle_server(int argc, char **argv) {
     memset(&sAddress, 0, sizeof(sAddress));
     sAddress.sin_family = AF_INET;
     sAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    sAddress.sin_port = htons(port);
+    sAddress.sin_port = htons(atoi(*(argv+1)));
 
     if (bind(ssocket, (struct sockaddr*)&sAddress, sizeof(sAddress)) < 0) {
         perror("ERROR: bind() failed");
@@ -213,7 +216,9 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    printf("MAIN: Wordle server listening on port %d\n", port);
+    printf("MAIN: Wordle server listening on port {%d}\n",atoi(*(argv+1)));
+    printf("MAIN: seeded pseudo-random number generator with %d\n", atoi(*(argv+2)));
+    printf("MAIN: rcvd incoming connection request\n");
 
     while (on) {
         struct sockaddr_in cAddress;
