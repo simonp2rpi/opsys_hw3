@@ -175,7 +175,7 @@ char* process_guess(const char* guess, const char* hidden_word, int* guesses_lef
         }
     }
 
-    sprintf(reply + 1, "%02d%s", *guesses_left, result);
+    printf(reply + 1, "%02d%s", *guesses_left, result);
     return reply;
 }
 
