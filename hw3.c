@@ -227,7 +227,6 @@ int wordle_server(int argc, char **argv) {
 
     printf("MAIN: Wordle server listening on port {%d}\n",atoi(*(argv+1)));
     printf("MAIN: seeded pseudo-random number generator with %d\n", atoi(*(argv+2)));
-    printf("MAIN: rcvd incoming connection request\n");
 
     while (on) {
         struct sockaddr_in cAddress;
@@ -244,6 +243,8 @@ int wordle_server(int argc, char **argv) {
             free(csocket);
             continue;
         }
+
+        printf("MAIN: rcvd incoming connection request\n");
 
         pthread_t thread;
         pthread_create(&thread, NULL, handle_client, csocket);
