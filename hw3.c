@@ -31,7 +31,7 @@ void sigusr1(int sig) {
 }
 
 void* handle_client(void* arg) {
-    int csocket = *(int*)arg;
+    int cSocket = *(int*)arg;
     free(arg);
 
     pthread_t thread_id = pthread_self();
@@ -44,13 +44,13 @@ void* handle_client(void* arg) {
     char *guess = calloc(6,sizeof(char));
     while (guesses > 0) {
         printf("THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
-        int bytes_received = recv(csocket, guess, 5, 0);
+        int bytes_received = recv(cSocket, guess, 5, 0);
         if (bytes_received <= 0) {
             printf("THREAD %lu: client gave up; closing TCP connection...\n", (unsigned long)thread_id);
             pthread_mutex_lock(&lock);
             pthread_mutex_unlock(&lock);
             losses++;
-            close(csocket);
+            close(cSocket);
             pthread_exit(NULL);
         }
 
@@ -79,10 +79,10 @@ void* handle_client(void* arg) {
         if (wordle == NULL) {
             char * sendInval = calloc(9, sizeof(char));
             sprintf(sendInval, "N%02d?????", guesses);
-            send(csocket, sendInval, 8, 0);
+            send(cSocket, sendInval, 8, 0);
             free(sendInval);
         } else {
-            send(csocket, wordle, 8, 0);
+            send(cSocket, wordle, 8, 0);
             free(wordle);
             if (strcmp(guess, hidden_word) == 0) {
                 printf("THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
@@ -100,7 +100,7 @@ void* handle_client(void* arg) {
         }
     }
 
-    close(csocket);
+    close(cSocket);
     pthread_exit(NULL);
 }
 
@@ -120,9 +120,9 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
     }
 
     if (!valid) {
-        *(reply+0) = 'N';
-        sprintf(reply + 1, "%02d?????", *guesses_left);
-        return reply; 
+        *(wordle+0) = 'N';
+        sprintf(wordle + 1, "%02d?????", *guesses_left);
+        return wordle; 
     }
 
     *(wordle+0) = 'Y';
@@ -238,24 +238,24 @@ int wordle_server(int argc, char **argv) {
 
     while (on) {
         struct sockaddr_in cAddress;
-        socklen_t client_len = sizeof(cAddress);
-        int* csocket = malloc(sizeof(int));
-        if (!csocket) {
+        socklen_t cLen = sizeof(cAddress);
+        int* cSocket = malloc(sizeof(int));
+        if (!cSocket) {
             perror("ERROR: malloc() failed");
             continue;
         }
 
-        *csocket = accept(ssocket, (struct sockaddr*)&cAddress, &client_len);
-        if (*csocket < 0) {
+        *cSocket = accept(ssocket, (struct sockaddr*)&cAddress, &cLen);
+        if (*cSocket < 0) {
             perror("ERROR: accept() failed");
-            free(csocket);
+            free(cSocket);
             continue;
         }
 
         printf("MAIN: rcvd incoming connection request\n");
 
         pthread_t thread;
-        pthread_create(&thread, NULL, handle_client, csocket);
+        pthread_create(&thread, NULL, handle_client, cSocket);
         pthread_detach(thread);
     }
 
