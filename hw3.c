@@ -23,7 +23,7 @@ int wordle_server(int argc, char **argv);
 
 void handle_sigusr1(int sig) {
     server_running = 0; // Stop the server loop
-    printf("MAIN: SIGUSR1 received; Wordle server shutting down...\n");
+    printf("MAIN: SIGUSR1 rcvd; Wordle server shutting down...\n");
 }
 
 void load_dictionary(const char* filename, int num_words) {
@@ -89,7 +89,7 @@ void* handle_client(void* arg) {
         }
 
         guess[5] = '\0'; // Ensure null-termination
-        printf("THREAD %lu: received guess: %s\n", (unsigned long)thread_id, guess);
+        printf("THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
 
         pthread_mutex_lock(&lock);
         total_guesses++;
