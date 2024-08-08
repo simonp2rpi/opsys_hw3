@@ -24,11 +24,11 @@ int wordle_server(int argc, char **argv);
 
 void sigusr1(int sig) {
     on = 0; 
-    fprintf("MAIN: SIGUSR1 received; Wordle server shutting down...\n");
-    fprintf("MAIN: valid guesses: %d\n", validGuess);
-    fprintf("MAIN: win/loss: %d/%d\n", wins, losses);
+    printf("MAIN: SIGUSR1 received; Wordle server shutting down...\n");
+    printf("MAIN: valid guesses: %d\n", validGuess);
+    printf("MAIN: win/loss: %d/%d\n", wins, losses);
     for (int i = 0; *(answers+i); i++) {
-        fprintf("MAIN: word #%d: %s\n", i+1, *(answers+i));
+        printf("MAIN: word #%d: %s\n", i+1, *(answers+i));
     }
 }
 
@@ -48,10 +48,10 @@ void* handle_client(void* arg) {
     int guesses = 6;
     while (guesses > 0) {
         char *guess = calloc(6,sizeof(char));
-        fprintf("THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
+        printf("THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
         int bytes_received = recv(cSocket, guess, 5, 0);
         if (bytes_received <= 0) {
-            fprintf("THREAD %lu: client gave up; closing TCP connection...\n", (unsigned long)thread_id);
+            printf("THREAD %lu: client gave up; closing TCP connection...\n", (unsigned long)thread_id);
             pthread_mutex_lock(&lock);
             pthread_mutex_unlock(&lock);
             losses++;
@@ -66,7 +66,7 @@ void* handle_client(void* arg) {
                 break;
             }
         }
-        fprintf("THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
+        printf("THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
         
         pthread_mutex_lock(&lock);
         pthread_mutex_unlock(&lock);
@@ -74,29 +74,29 @@ void* handle_client(void* arg) {
         //only if valid guess
         if(valid){
             validGuess++;
-            fprintf("THREAD %lu: sending reply: ", (unsigned long)thread_id);
+            printf("THREAD %lu: sending reply: ", (unsigned long)thread_id);
         }
         else if(!valid){
-            fprintf("THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
+            printf("THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
         }
 
         char* wordle = guessWord(guess, hidden_word, &guesses);
         if (wordle == NULL) {
             char * sendInval = calloc(9, sizeof(char));
-            sfprintf(sendInval, "N%02d?????", guesses);
+            sprintf(sendInval, "N%02d?????", guesses);
             send(cSocket, sendInval, 8, 0);
             free(sendInval);
         } else {
             send(cSocket, wordle, 8, 0);
             free(wordle);
             if (strcmp(guess, hidden_word) == 0) {
-                fprintf("THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
+                printf("THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
                 pthread_mutex_lock(&lock);
                 wins++;
                 pthread_mutex_unlock(&lock);
                 break;
             } else if (guesses == 0) {
-                fprintf("THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
+                printf("THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
                 pthread_mutex_lock(&lock);
                 losses++;
                 pthread_mutex_unlock(&lock);
@@ -126,8 +126,8 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
 
     if (!valid) {
         *(wordle+0) = 'N';
-        sfprintf(wordle + 1, "%02d?????", *guesses_left);
-        fprintf("?????  (%d guesses left)\n", *guesses_left);
+        sprintf(wordle + 1, "%02d?????", *guesses_left);
+        printf("?????  (%d guesses left)\n", *guesses_left);
         return wordle; 
     }
 
@@ -156,8 +156,8 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
             }
         }
     }
-    sfprintf(wordle + 1, "%02d%s", *guesses_left, result);
-    fprintf("%s  (%d guesses left)\n", result, *guesses_left);
+    sprintf(wordle + 1, "%02d%s", *guesses_left, result);
+    printf("%s  (%d guesses left)\n", result, *guesses_left);
     free(ret);
     free(result);
     return wordle;
@@ -165,8 +165,8 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
 
 int wordle_server(int argc, char **argv) {
     if (argc != 5) {
-        ffprintf(stderr, "ERROR: Invalid argument(s)\n");
-        ffprintf(stderr, "USAGE: hw3.out <listener-port> <seed> <dictionary-filename> <num-words>\n");
+        fprintf(stderr, "ERROR: Invalid argument(s)\n");
+        fprintf(stderr, "USAGE: hw3.out <listener-port> <seed> <dictionary-filename> <num-words>\n");
         return EXIT_FAILURE;
     }
 
@@ -211,7 +211,7 @@ int wordle_server(int argc, char **argv) {
 
     *(words+i) = NULL; 
     fclose(file);
-    fprintf("MAIN: opened %s (%d words)\n", *(argv+3), i);
+    printf("MAIN: opened %s (%d words)\n", *(argv+3), i);
     if (pthread_mutex_init(&lock, NULL) != 0) {
         perror("ERROR: pthread_mutex_init() failed");
         return EXIT_FAILURE;
@@ -247,8 +247,8 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    fprintf("MAIN: Wordle server listening on port {%d}\n",atoi(*(argv+1)));
-    fprintf("MAIN: seeded pseudo-random number generator with %d\n", atoi(*(argv+2)));
+    printf("MAIN: Wordle server listening on port {%d}\n",atoi(*(argv+1)));
+    printf("MAIN: seeded pseudo-random number generator with %d\n", atoi(*(argv+2)));
 
     while (on) {
         struct sockaddr_in cAddress;
@@ -266,7 +266,7 @@ int wordle_server(int argc, char **argv) {
             continue;
         }
 
-        fprintf("MAIN: rcvd incoming connection request\n");
+        printf("MAIN: rcvd incoming connection request\n");
 
         pthread_t thread;
         pthread_create(&thread, NULL, handle_client, cSocket);
@@ -285,6 +285,6 @@ int wordle_server(int argc, char **argv) {
     }
     free(answers);
 
-    fprintf("MAIN: Wordle server shut down successfully\n");
+    printf("MAIN: Wordle server shut down successfully\n");
     return EXIT_SUCCESS;
 }
