@@ -98,8 +98,10 @@ void* handle_client(void* arg) {
         char* reply = process_guess(guess, hidden_word, &guesses_left);
         if (reply == NULL) {
             // Invalid guess
+            printf("THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, reply, guesses_left);
             send(client_socket, "N?????\0", 8, 0);
         } else {
+            printf("THREAD %lu: sending reply: %s (%d guesses left)\n", (unsigned long)thread_id, reply, guesses_left);
             send(client_socket, reply, 8, 0);
             free(reply);
 
