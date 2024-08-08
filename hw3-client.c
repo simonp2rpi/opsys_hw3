@@ -88,6 +88,9 @@ while ( i<5 )    /* TO DO: fix the memory leaks! */
     printf( " %d guess%s remaining\n", guesses, guesses == 1 ? "" : "es" );
     if ( guesses == 0 ) break;
   }
+  // if( ){ //guess is correct
+  //   printf("CLIENT: you won!");
+  // }
   i++;
 }
 
