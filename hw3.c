@@ -76,19 +76,44 @@ void* handle_client(void* arg) {
         } else {
             send(csocket, wordle, 8, 0);
             free(wordle);
-            if (strcmp(guess, hidden_word) == 0) {
-                printf("THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
-                pthread_mutex_lock(&lock);
-                total_wins++;
-                pthread_mutex_unlock(&lock);
-                break;
-            } else if (guesses == 0) {
-                printf("THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
-                pthread_mutex_lock(&lock);
-                total_losses++;
-                pthread_mutex_unlock(&lock);
-                break;
+            if( strcmp(guess, hidden_word) == 0 || guesses == 0){ 
+                if (strcmp(guess, hidden_word) == 0) {
+                    printf("THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
+                    pthread_mutex_lock(&lock);
+                    total_wins++;
+                    pthread_mutex_unlock(&lock);
+                } else if (guesses == 0) {
+                    printf("THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
+                    pthread_mutex_lock(&lock);
+                    total_losses++;
+                    pthread_mutex_unlock(&lock);
+                }
+
+
+                ////
+                ////
+                ////
+                ////
+                
+                //PUT AT END?? 
+
+                //make sure "words" doesnt correspond to the dictonary but rather the variable of the "hidden words"
+                printf("SIGUSR1 rcvd; Wordle server shutting down...\n");
+                printf("MAIN: valid guesses: %d\n", 6 - guesses);
+                printf("MAIN: win/loss: %d/%d\n", total_wins, total_losses);
+                printf("MAIN: word #1: %s\n", words[0]);
+                if(total_wins + total_losses >= 2){
+                    printf("MAIN: word #2: %s\n", words[1]);
+                }
+                if(total_wins + total_losses >= 3){
+                    printf("MAIN: word #3: %s\n", words[2]);
+                }
+
+                ////
+                /////
+                /////
             }
+
         }
     }
 
@@ -141,7 +166,6 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
             }
         }
     }
-
     sprintf(wordle + 1, "%02d%s", *guesses_left, result);
     printf("%s  (%d guesses left)\n", result, *guesses_left);
     return wordle;
