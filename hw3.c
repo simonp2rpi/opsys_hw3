@@ -11,6 +11,8 @@ extern int validGuess;
 extern int wins;
 extern int losses;
 extern char **words;
+extern char **answers;
+extern int ansIndex;
 
 pthread_mutex_t lock;
 int on = 1;
@@ -25,8 +27,8 @@ void sigusr1(int sig) {
     printf("MAIN: SIGUSR1 received; Wordle server shutting down...\n");
     printf("MAIN: valid guesses: %d\n", validGuess);
     printf("MAIN: win/loss: %d/%d\n", wins, losses);
-    for (int i = 0; *(words+i); i++) {
-        printf("MAIN: word #%d: %s\n", i+1, *(words+i));
+    for (int i = 0; *(answers+i); i++) {
+        printf("MAIN: word #%d: %s\n", i+1, *(answers+i));
     }
 }
 
@@ -40,9 +42,12 @@ void* handle_client(void* arg) {
     const char* hidden_word = *(words+(rand() % (validGuess + 1)));
     pthread_mutex_unlock(&lock);
 
+    *(answers+ansIndex) = hidden_word;
+    ansIndex++;
+
     int guesses = 6;
-    char *guess = calloc(6,sizeof(char));
     while (guesses > 0) {
+        char *guess = calloc(6,sizeof(char));
         printf("THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
         int bytes_received = recv(cSocket, guess, 5, 0);
         if (bytes_received <= 0) {
@@ -98,8 +103,8 @@ void* handle_client(void* arg) {
                 break;
             }
         }
+        free(guess);
     }
-
     close(cSocket);
     pthread_exit(NULL);
 }
@@ -153,6 +158,8 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
     }
     sprintf(wordle + 1, "%02d%s", *guesses_left, result);
     printf("%s  (%d guesses left)\n", result, *guesses_left);
+    free(ret);
+    free(result);
     return wordle;
 }
 
@@ -176,6 +183,12 @@ int wordle_server(int argc, char **argv) {
 
     words = calloc(numWords + 1, sizeof(char*));
     if (!words) {
+        perror("ERROR: calloc() failed");
+        exit(EXIT_FAILURE);
+    }
+
+    answers = calloc(4, sizeof(char*));
+    if (!answers) {
         perror("ERROR: calloc() failed");
         exit(EXIT_FAILURE);
     }
@@ -266,6 +279,11 @@ int wordle_server(int argc, char **argv) {
         free(*(words+i));
     }
     free(words);
+
+    for (int i = 0; *(answers+i); i++) {
+        free(*(answers+i));
+    }
+    free(answers);
 
     printf("MAIN: Wordle server shut down successfully\n");
     return EXIT_SUCCESS;
