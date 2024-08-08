@@ -39,7 +39,7 @@ void* handle_client(void* arg) {
     pthread_t thread_id = pthread_self();
 
     pthread_mutex_lock(&lock);
-    const char* hidden_word = *(words+(rand() % (validGuess + 1)));
+    char* hidden_word = *(words+(rand() % (validGuess + 1)));
     pthread_mutex_unlock(&lock);
 
     *(answers+ansIndex) = hidden_word;
