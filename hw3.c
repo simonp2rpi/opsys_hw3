@@ -146,7 +146,6 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
             }
         }
     }
-
     sprintf(wordle + 1, "%02d%s", *guesses_left, result);
     printf("%s  (%d guesses left)\n", result, *guesses_left);
     return wordle;
