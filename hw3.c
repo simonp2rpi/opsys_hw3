@@ -49,18 +49,27 @@ void* handle_client(void* arg) {
             pthread_exit(NULL);
         }
 
-        *(guess+5) = '\0'; 
-        //check if it is in dictionary
+        int valid = 0;
+        for (char** word = words; *word; word++) {
+            if (!strcmp(guess, *word)) {
+                valid = 1;
+                break;
+            }
+        }
         printf("THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
-        //else: // printf("THREAD %lu: invalid guess; sending reply: ?????", (unsigned long)thread_id);
-
+        if(!valid){
+            printf("THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
+        }
+        
         pthread_mutex_lock(&lock);
         pthread_mutex_unlock(&lock);
         total_guesses++;
 
         //only if valid guess
-        printf("THREAD %lu: sending reply: ", (unsigned long)thread_id);
-        
+        if(valid){
+            printf("THREAD %lu: sending reply: ", (unsigned long)thread_id);
+        }
+
         char* wordle = guessWord(guess, hidden_word, &guesses);
         if (wordle == NULL) {
             send(csocket, "N?????\0", 8, 0);
