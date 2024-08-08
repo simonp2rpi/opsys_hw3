@@ -122,6 +122,7 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
     if (!valid) {
         *(wordle+0) = 'N';
         sprintf(wordle + 1, "%02d?????", *guesses_left);
+        printf("?????  (%d guesses left)\n", *guesses_left);
         return wordle; 
     }
 
