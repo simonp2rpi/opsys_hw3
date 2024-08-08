@@ -7,12 +7,12 @@
 #include <signal.h>
 #include <ctype.h>
 
-extern int validGuess;
-extern int wins;
-extern int losses;
-extern char **words;
-extern char **answers;
-extern int ansIndex;
+int validGuess = 0;
+int wins = 0;
+int losses = 0;
+char **words = NULL;
+char **answers = NULL;
+int ansIndex = 0;
 
 pthread_mutex_t lock;
 int on = 1;
