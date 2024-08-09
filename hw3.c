@@ -83,7 +83,9 @@ void* handle_client(void* arg) {
         char* wordle = guessWord(guess, hidden_word, &guesses);
         if (wordle == NULL) {
             char * sendInval = calloc(9, sizeof(char));
-            sprintf(sendInval, "N%02d?????", guesses);
+            *(sendInval+0) = 'N';
+            *(short*)(sendInval + 1) = htons(*guesses_left);
+            sprintf(sendInval + 3, "?????");
             send(cSocket, sendInval, 8, 0);
             free(sendInval);
         } else {
@@ -157,7 +159,7 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
             }
         }
     }
-    sprintf(wordle + 1, "%02d", htons(*guesses_left));
+    *(short*)(wordle + 1) = htons(*guesses_left);
     sprintf(wordle + 3, "%s", result);
     fprintf(stdout, "%s  (%d guesses left)\n", result, *guesses_left);
     free(ret);
