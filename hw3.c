@@ -45,8 +45,8 @@ void* handle_client(void* arg) {
     *(answers+ansIndex) = hidden_word;
     ansIndex++;
 
-    int guesses = 6;
-    while (guesses > 0) {
+    int guesses_left = 6;
+    while (guesses_left > 0) {
         char *guess = calloc(6,sizeof(char));
         fprintf(stdout, "THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
         int bytes_received = recv(cSocket, guess, 5, 0);
