@@ -20,7 +20,7 @@ int on = 1;
 
 void sigusr1(int sig);
 void* handle_client(void* arg);
-char* guessWord(const char* guess, const char* hidden_word, int* guesses_left);
+char* guessWord(const char* guess, const char* hidden_word, int* guesses);
 int wordle_server( int argc, char ** argv );
 
 void sigusr1(int sig) {
@@ -82,7 +82,120 @@ void* handle_client(void* arg) {
         }
 
         char* wordle = calloc(9, sizeof(char));
-        wordle = guessWord(guess, hidden_word, &guesses);
+        // wordle = guessWord(guess, hidden_word, &guesses);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//char* guessWord(const char* guess, const char* hidden_word, int* guesses) {
+    //char* wordle = calloc(9, sizeof(char)); 
+    
+    if (!wordle) {
+        perror("ERROR: calloc() failed");
+        return NULL;
+    }
+
+    valid = 0;
+    for (char** word = words; *word; word++) {
+        if (!strcmp(guess, *word)) {
+            valid = 1;
+            break;
+        }
+    }
+
+    if (!valid) {
+        *(wordle+0) = 'N';
+        *(short*)(wordle + 1) = htons(guesses);
+        memcpy(wordle + 3, "?????", 5);
+        fprintf(stdout, "?????  (%d guesses left)\n", guesses);
+        return wordle; 
+    }
+
+    *(wordle+0) = 'Y';
+    (guesses)--;
+
+    char *result = calloc(6,sizeof(int)); 
+    strcpy(result, "-----");
+    int *ret = calloc(5,sizeof(int)); 
+
+    for (int i = 0; i < 5; i++) {
+        if (*(guess+i) == *(hidden_word+i)) {
+            *(result+i) = toupper(*(guess+i));
+            *(ret+i) = 1;
+        }
+    }
+
+    for (int i = 0; i < 5; i++) {
+        if (!*(ret+i)) {
+            for (int j = 0; j < 5; j++) {
+                if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
+                    *(result+i) = tolower(*(guess+i));
+                    *(ret+j) = 1;
+                    break;
+                }
+            }
+        }
+    }
+    *(short*)(wordle + 1) = htons(guesses);
+    memcpy(wordle + 3, result, 5);
+    fprintf(stdout, "%s  (%d guesses left)\n", result, guesses);
+    free(ret);
+    free(result);
+    printf("%s\n", wordle);
+    //return wordle;
+//}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         if (wordle == NULL) {
             char * sendInval = calloc(9, sizeof(char));
             *(sendInval+0) = 'N';
@@ -111,63 +224,6 @@ void* handle_client(void* arg) {
     }
     close(cSocket);
     pthread_exit(NULL);
-}
-
-char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
-    char* wordle = calloc(9, sizeof(char)); 
-    if (!wordle) {
-        perror("ERROR: calloc() failed");
-        return NULL;
-    }
-
-    int valid = 0;
-    for (char** word = words; *word; word++) {
-        if (!strcmp(guess, *word)) {
-            valid = 1;
-            break;
-        }
-    }
-
-    if (!valid) {
-        *(wordle+0) = 'N';
-        *(short*)(wordle + 1) = htons(*guesses_left);
-        memcpy(wordle + 3, "?????", 5);
-        fprintf(stdout, "?????  (%d guesses left)\n", *guesses_left);
-        return wordle; 
-    }
-
-    *(wordle+0) = 'Y';
-    (*guesses_left)--;
-
-    char *result = calloc(6,sizeof(int)); 
-    strcpy(result, "-----");
-    int *ret = calloc(5,sizeof(int)); 
-
-    for (int i = 0; i < 5; i++) {
-        if (*(guess+i) == *(hidden_word+i)) {
-            *(result+i) = toupper(*(guess+i));
-            *(ret+i) = 1;
-        }
-    }
-
-    for (int i = 0; i < 5; i++) {
-        if (!*(ret+i)) {
-            for (int j = 0; j < 5; j++) {
-                if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
-                    *(result+i) = tolower(*(guess+i));
-                    *(ret+j) = 1;
-                    break;
-                }
-            }
-        }
-    }
-    *(short*)(wordle + 1) = htons(*guesses_left);
-    memcpy(wordle + 3, result, 5);
-    fprintf(stdout, "%s  (%d guesses left)\n", result, *guesses_left);
-    free(ret);
-    free(result);
-    printf("%s\n", wordle);
-    return wordle;
 }
 
 int wordle_server(int argc, char **argv) {
