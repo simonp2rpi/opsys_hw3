@@ -20,7 +20,7 @@ int on = 1;
 
 void sigusr1(int sig);
 void* handle_client(void* arg);
-char* guessWord(const char* guess, const char* hidden_word, int* guesses);
+char* guessWord(const char* guess, const char* hidden_word, int* guesses_left);
 int wordle_server( int argc, char ** argv );
 
 void sigusr1(int sig) {
@@ -69,15 +69,18 @@ void* handle_client(void* arg) {
         }
         fprintf(stdout, "THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
         
+        printf("before lock\n");
         pthread_mutex_lock(&lock);
         pthread_mutex_unlock(&lock);
-
+        printf("after lock\n");
         //only if valid guess
         if(valid){
+            printf("before SR\n");
             total_guesses++;
-            fprintf(stdout, "THREAD %lu: sending reply: ", (unsigned long)thread_id);
+            printf("THREAD %lu: sending reply: ",(unsigned long)thread_id);
         }
         else if(!valid){
+            printf("before IVG\n");
             fprintf(stdout, "THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
         }
 
@@ -91,110 +94,62 @@ void* handle_client(void* arg) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//char* guessWord(const char* guess, const char* hidden_word, int* guesses) {
-    //char* wordle = calloc(9, sizeof(char)); 
-    
     if (!wordle) {
         perror("ERROR: calloc() failed");
         return NULL;
     }
 
-    valid = 0;
+    int valid2 = 0;
     for (char** word = words; *word; word++) {
         if (!strcmp(guess, *word)) {
-            valid = 1;
+            valid2 = 1;
             break;
         }
     }
 
-    if (!valid) {
+    if (!valid2) {
         *(wordle+0) = 'N';
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, "?????", 5);
         fprintf(stdout, "?????  (%d guesses left)\n", guesses);
-        return wordle; 
-    }
+        // return wordle; 
+    }else{ 
 
-    *(wordle+0) = 'Y';
-    (guesses)--;
+        *(wordle+0) = 'Y';
+        (guesses)--;
 
-    char *result = calloc(6,sizeof(int)); 
-    strcpy(result, "-----");
-    int *ret = calloc(5,sizeof(int)); 
-
+        char *result = calloc(6, sizeof(char));   
+        strcpy(result, "-----");
+        int *ret = calloc(5,sizeof(int)); 
+    
     for (int i = 0; i < 5; i++) {
-        if (*(guess+i) == *(hidden_word+i)) {
-            *(result+i) = toupper(*(guess+i));
-            *(ret+i) = 1;
-        }
+
+
+        if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
+           // *(result+i) = *(guess+i); //TOUPPER //errot
+        } 
+
     }
 
-    for (int i = 0; i < 5; i++) {
-        if (!*(ret+i)) {
-            for (int j = 0; j < 5; j++) {
-                if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
-                    *(result+i) = tolower(*(guess+i));
-                    *(ret+j) = 1;
-                    break;
-                }
-            }
+
+        for (int i = 0; i < 5; i++) {
+            // if (!*(ret+i)) {
+            //     for (int j = 0; j < 5; j++) {
+            //         if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
+            //             //*(result+i) = tolower(*(guess+i));
+            //             // *(ret+j) = 1;
+            //             break;
+            //         }
+            //     }
+            // }
         }
+        *(short*)(wordle + 1) = htons(guesses);
+        memcpy(wordle + 3, result, 5);
+        fprintf(stdout, "%s  (%d guesses left)\n", result, guesses);
+        free(ret);
+        free(result);
+        printf("%s\n", wordle); //"Y"
     }
-    *(short*)(wordle + 1) = htons(guesses);
-    memcpy(wordle + 3, result, 5);
-    fprintf(stdout, "%s  (%d guesses left)\n", result, guesses);
-    free(ret);
-    free(result);
-    printf("%s\n", wordle);
-    //return wordle;
-//}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         if (wordle == NULL) {
             char * sendInval = calloc(9, sizeof(char));
@@ -203,7 +158,8 @@ void* handle_client(void* arg) {
             memcpy(sendInval + 3, "?????", 5);
             send(cSocket, sendInval, 8, 0);
             free(sendInval);
-        } else {
+        } 
+        else {
             send(cSocket, wordle, 8, 0);
             free(wordle);
             if (strcmp(guess, hidden_word) == 0) {
@@ -220,11 +176,13 @@ void* handle_client(void* arg) {
                 break;
             }
         }
+        printf(":)\n");
         free(guess);
     }
     close(cSocket);
     pthread_exit(NULL);
 }
+
 
 int wordle_server(int argc, char **argv) {
     if (argc != 5) {
@@ -313,29 +271,31 @@ int wordle_server(int argc, char **argv) {
     fprintf(stdout, "MAIN: Wordle server listening on port {%d}\n",atoi(*(argv+1)));
     fprintf(stdout, "MAIN: seeded pseudo-random number generator with %d\n", atoi(*(argv+2)));
 
-    while (on) {
+        while (on) {
         struct sockaddr_in cAddress;
-        socklen_t cLen = sizeof(cAddress);
-        int* cSocket = malloc(sizeof(int));
-        if (!cSocket) {
+        socklen_t client_len = sizeof(cAddress);
+        int* csocket = malloc(sizeof(int));
+        if (!csocket) {
             perror("ERROR: malloc() failed");
             continue;
         }
 
-        *cSocket = accept(ssocket, (struct sockaddr*)&cAddress, &cLen);
-        if (*cSocket < 0) {
+        *csocket = accept(ssocket, (struct sockaddr*)&cAddress, &client_len);
+        if (*csocket < 0) {
             perror("ERROR: accept() failed");
-            free(cSocket);
+            free(csocket);
             continue;
         }
 
-        fprintf(stdout, "MAIN: rcvd incoming connection request\n");
-
+        printf("MAIN: rcvd incoming connection request\n");
+        
         pthread_t thread;
-        pthread_create(&thread, NULL, handle_client, cSocket);
+        printf("THREAD");
+        pthread_create(&thread, NULL, handle_client, csocket);
         pthread_detach(thread);
+        printf("FINISH");
     }
-
+    printf("EXITS");
     close(ssocket);
     pthread_mutex_destroy(&lock);
     for (int i = 0; *(words+i); i++) {
