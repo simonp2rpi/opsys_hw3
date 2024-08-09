@@ -13,6 +13,7 @@ extern int total_losses;
 extern char ** words;
 char **answers = NULL;
 int ansIndex = 0;
+int numWords = 0;
 
 pthread_mutex_t lock;
 int on = 1;
@@ -39,7 +40,7 @@ void* handle_client(void* arg) {
     pthread_t thread_id = pthread_self();
 
     pthread_mutex_lock(&lock);
-    char* hidden_word = *(words+(rand() % (total_guesses + 1)));
+    char* hidden_word = *(words+(numWords % rand()));
     pthread_mutex_unlock(&lock);
 
     *(answers+ansIndex) = hidden_word;
@@ -177,7 +178,7 @@ int wordle_server(int argc, char **argv) {
     }
 
     int seed = atoi(*(argv+2));
-    int numWords = atoi(*(argv+4));
+    numWords = atoi(*(argv+4));
 
     srand(seed);
 
