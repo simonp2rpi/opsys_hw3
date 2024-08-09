@@ -51,8 +51,8 @@ int main()
 
 
   /* The implementation of the application protocol is below... */
-int i = 0;
-while ( i<5 )    /* TO DO: fix the memory leaks! */
+
+while ( 1 )    /* TO DO: fix the memory leaks! */
 {
   char * buffer = calloc( 9, sizeof( char ) );
   if ( fgets( buffer, 9, stdin ) == NULL ) break;
@@ -85,13 +85,9 @@ while ( i<5 )    /* TO DO: fix the memory leaks! */
     }
 
     short guesses = ntohs( *(short *)(buffer + 1) );
-    printf( " %d guess%s remaining\n", guesses, guesses == 1 ? "" : "es" );
+    printf( " -- %d guess%s remaining\n", guesses, guesses == 1 ? "" : "es" );
     if ( guesses == 0 ) break;
   }
-  // if( ){ //guess is correct
-  //   printf("CLIENT: you won!");
-  // }
-  i++;
 }
 
 

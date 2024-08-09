@@ -80,12 +80,13 @@ void* handle_client(void* arg) {
             fprintf(stdout, "THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
         }
 
-        char* wordle = guessWord(guess, hidden_word, &guesses);
+        char* wordle = calloc(9, sizeof(char));
+        wordle = guessWord(guess, hidden_word, &guesses);
         if (wordle == NULL) {
             char * sendInval = calloc(9, sizeof(char));
             *(sendInval+0) = 'N';
             *(short*)(sendInval + 1) = htons(guesses);
-            sprintf(sendInval + 3, "?????");
+            memcpy(sendInval + 3, "?????", 5);
             send(cSocket, sendInval, 8, 0);
             free(sendInval);
         } else {
@@ -129,7 +130,7 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
     if (!valid) {
         *(wordle+0) = 'N';
         *(short*)(wordle + 1) = htons(*guesses_left);
-        sprintf(wordle + 3, "?????");
+        memcpy(wordle + 3, "?????", 5);
         fprintf(stdout, "?????  (%d guesses left)\n", *guesses_left);
         return wordle; 
     }
@@ -164,6 +165,7 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
     fprintf(stdout, "%s  (%d guesses left)\n", result, *guesses_left);
     free(ret);
     free(result);
+    printf("%s\n", wordle);
     return wordle;
 }
 
