@@ -126,7 +126,7 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
 
     if (!valid) {
         *(wordle+0) = 'N';
-        sprintf(wordle + 1, htons("%02d"), *guesses_left);
+        sprintf(wordle + 1, "%02d", htons(*guesses_left));
         sprintf(wordle + 3, "?????");
         fprintf(stdout, "?????  (%d guesses left)\n", *guesses_left);
         return wordle; 
@@ -157,7 +157,7 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
             }
         }
     }
-    sprintf(wordle + 1, htons("%02d"), *guesses_left);
+    sprintf(wordle + 1, "%02d", htons(*guesses_left));
     sprintf(wordle + 3, "%s", result);
     fprintf(stdout, "%s  (%d guesses left)\n", result, *guesses_left);
     free(ret);
