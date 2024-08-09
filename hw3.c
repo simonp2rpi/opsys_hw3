@@ -176,7 +176,7 @@ int wordle_server(int argc, char **argv) {
     int numWords = atoi(*(argv+4));
 
     srand(seed);
-   //!!!
+
     FILE *file = fopen(*(argv+3), "r");
     if (!file) {
         perror("ERROR: failure opening dictionary file");
