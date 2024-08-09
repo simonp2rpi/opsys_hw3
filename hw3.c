@@ -20,6 +20,7 @@ int on = 1;
 void sigusr1(int sig);
 void* handle_client(void* arg);
 char* guessWord(const char* guess, const char* hidden_word, int* guesses_left);
+int wordle_server( int argc, char ** argv );
 
 void sigusr1(int sig) {
     on = 0; 
