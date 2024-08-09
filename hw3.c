@@ -40,7 +40,7 @@ void* handle_client(void* arg) {
     pthread_t thread_id = pthread_self();
 
     pthread_mutex_lock(&lock);
-    char* hidden_word = *(words+(numWords % rand()));
+    char* hidden_word = *(words + (rand()%numWords));
     pthread_mutex_unlock(&lock);
 
     *(answers+ansIndex) = hidden_word;
@@ -54,8 +54,8 @@ void* handle_client(void* arg) {
         if (bytes_received <= 0) {
             fprintf(stdout, "THREAD %lu: client gave up; closing TCP connection...\n", (unsigned long)thread_id);
             pthread_mutex_lock(&lock);
-            pthread_mutex_unlock(&lock);
             total_losses++;
+            pthread_mutex_unlock(&lock);
             close(cSocket);
             pthread_exit(NULL);
         }
@@ -69,30 +69,17 @@ void* handle_client(void* arg) {
         }
         fprintf(stdout, "THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
         
-        printf("before lock\n");
-        pthread_mutex_lock(&lock);
-        pthread_mutex_unlock(&lock);
-        printf("after lock\n");
         //only if valid guess
         if(valid){
-            printf("before SR\n");
             total_guesses++;
             printf("THREAD %lu: sending reply: ",(unsigned long)thread_id);
         }
         else if(!valid){
-            printf("before IVG\n");
             fprintf(stdout, "THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
         }
 
         char* wordle = calloc(9, sizeof(char));
         // wordle = guessWord(guess, hidden_word, &guesses);
-
-
-
-
-
-
-
 
     if (!wordle) {
         perror("ERROR: calloc() failed");
@@ -126,23 +113,26 @@ void* handle_client(void* arg) {
 
 
         if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
-           // *(result+i) = *(guess+i); //TOUPPER //errot
+           *(result+i) = *(guess+i); //TOUPPER //errot
         } 
 
     }
 
-
-        for (int i = 0; i < 5; i++) {
-            // if (!*(ret+i)) {
-            //     for (int j = 0; j < 5; j++) {
-            //         if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
-            //             //*(result+i) = tolower(*(guess+i));
-            //             // *(ret+j) = 1;
-            //             break;
-            //         }
-            //     }
-            // }
+    for (int i = 0; i < 5; i++) {
+        if (*(guess+i) == *(hidden_word+i)) {
+            *(result+i) = toupper(*(guess+i));
+            *(ret+i) = 1;
+        } else if (!*(ret+i)) {
+            for (int j = 0; j < 5; j++) {
+                if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
+                    *(result+i) = tolower(*(guess+i));
+                    *(ret+j) = 1;
+                    break;
+                }
+            }
         }
+    }
+
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, result, 5);
         fprintf(stdout, "%s  (%d guesses left)\n", result, guesses);
