@@ -7,6 +7,10 @@
 #include <signal.h>
 #include <ctype.h>
 
+int total_guesses;
+int total_wins;
+int total_losses;
+char ** words;
 char **answers = NULL;
 int ansIndex = 0;
 
