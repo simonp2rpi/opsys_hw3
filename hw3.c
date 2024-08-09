@@ -84,7 +84,7 @@ void* handle_client(void* arg) {
         if (wordle == NULL) {
             char * sendInval = calloc(9, sizeof(char));
             *(sendInval+0) = 'N';
-            *(short*)(sendInval + 1) = htons(*guesses);
+            *(short*)(sendInval + 1) = htons(guesses);
             sprintf(sendInval + 3, "?????");
             send(cSocket, sendInval, 8, 0);
             free(sendInval);
