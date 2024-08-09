@@ -7,10 +7,6 @@
 #include <signal.h>
 #include <ctype.h>
 
-int validGuess = 0;
-int wins = 0;
-int losses = 0;
-char **words = NULL;
 char **answers = NULL;
 int ansIndex = 0;
 
@@ -20,13 +16,12 @@ int on = 1;
 void sigusr1(int sig);
 void* handle_client(void* arg);
 char* guessWord(const char* guess, const char* hidden_word, int* guesses_left);
-int wordle_server(int argc, char **argv);
 
 void sigusr1(int sig) {
     on = 0; 
     fprintf(stdout, "MAIN: SIGUSR1 received; Wordle server shutting down...\n");
-    fprintf(stdout, "MAIN: valid guesses: %d\n", validGuess);
-    fprintf(stdout, "MAIN: win/loss: %d/%d\n", wins, losses);
+    fprintf(stdout, "MAIN: valid guesses: %d\n", total_guesses);
+    fprintf(stdout, "MAIN: win/loss: %d/%d\n", total_wins, total_losses);
     for (int i = 0; *(answers+i); i++) {
         fprintf(stdout, "MAIN: word #%d: %s\n", i+1, *(answers+i));
     }
@@ -39,7 +34,7 @@ void* handle_client(void* arg) {
     pthread_t thread_id = pthread_self();
 
     pthread_mutex_lock(&lock);
-    char* hidden_word = *(words+(rand() % (validGuess + 1)));
+    char* hidden_word = *(words+(rand() % (total_guesses + 1)));
     pthread_mutex_unlock(&lock);
 
     *(answers+ansIndex) = hidden_word;
@@ -54,7 +49,7 @@ void* handle_client(void* arg) {
             fprintf(stdout, "THREAD %lu: client gave up; closing TCP connection...\n", (unsigned long)thread_id);
             pthread_mutex_lock(&lock);
             pthread_mutex_unlock(&lock);
-            losses++;
+            total_losses++;
             close(cSocket);
             pthread_exit(NULL);
         }
@@ -73,7 +68,7 @@ void* handle_client(void* arg) {
 
         //only if valid guess
         if(valid){
-            validGuess++;
+            total_guesses++;
             fprintf(stdout, "THREAD %lu: sending reply: ", (unsigned long)thread_id);
         }
         else if(!valid){
@@ -92,13 +87,13 @@ void* handle_client(void* arg) {
             if (strcmp(guess, hidden_word) == 0) {
                 fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
                 pthread_mutex_lock(&lock);
-                wins++;
+                total_wins++;
                 pthread_mutex_unlock(&lock);
                 break;
             } else if (guesses == 0) {
                 fprintf(stdout, "THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
                 pthread_mutex_lock(&lock);
-                losses++;
+                total_losses++;
                 pthread_mutex_unlock(&lock);
                 break;
             }
