@@ -7,10 +7,10 @@
 #include <signal.h>
 #include <ctype.h>
 
-int total_guesses;
-int total_wins;
-int total_losses;
-char ** words;
+extern int total_guesses;
+extern int total_wins;
+extern int total_losses;
+extern char ** words;
 char **answers = NULL;
 int ansIndex = 0;
 
@@ -110,7 +110,7 @@ void* handle_client(void* arg) {
 }
 
 char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
-    char* wordle = calloc(8, sizeof(char)); 
+    char* wordle = calloc(9, sizeof(char)); 
     if (!wordle) {
         perror("ERROR: calloc() failed");
         return NULL;
@@ -126,7 +126,7 @@ char* guessWord(const char* guess, const char* hidden_word, int* guesses_left) {
 
     if (!valid) {
         *(wordle+0) = 'N';
-        sprintf(wordle + 1, "%02d", htons(*guesses_left));
+        *(short*)(wordle + 1) = htons(*guesses_left);
         sprintf(wordle + 3, "?????");
         fprintf(stdout, "?????  (%d guesses left)\n", *guesses_left);
         return wordle; 
