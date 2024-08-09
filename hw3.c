@@ -80,7 +80,7 @@ void* handle_client(void* arg) {
             fprintf(stdout, "THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
         }
 
-        char* wordle = calloc(9. sizeof(char));
+        char* wordle = calloc(9, sizeof(char));
         wordle = guessWord(guess, hidden_word, &guesses);
         if (wordle == NULL) {
             char * sendInval = calloc(9, sizeof(char));
