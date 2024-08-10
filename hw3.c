@@ -263,7 +263,6 @@ int wordle_server(int argc, char **argv) {
 
         *csocket = accept(ssocket, (struct sockaddr*)&cAddress, &client_len);
         if (*csocket < 0) {
-            fprintf(stderr,("ERROR: accept() failed"));
             free(csocket);
             continue;
         }
