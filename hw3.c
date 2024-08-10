@@ -62,6 +62,7 @@ void* handle_client(void* arg) {
             pthread_mutex_lock(&lock);
             total_losses++;
             pthread_mutex_unlock(&lock);
+            free(guess);
             close(cSocket);
             pthread_exit(NULL);
         }
@@ -210,6 +211,8 @@ int wordle_server(int argc, char **argv) {
         strcpy(*(dict+i), word);
         i++;
     }
+
+    free(word);
 
     *(dict+i) = NULL; 
     fclose(file);
