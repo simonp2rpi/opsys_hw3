@@ -152,8 +152,6 @@ void* handle_client(void* arg) {
                 free(result);
             }else{ 
 
-                *(wordle+0) = 'Y';
-                (guesses)--;
 
                 char *result = calloc(6, sizeof(char));   
                 strcpy(result, "-----");
