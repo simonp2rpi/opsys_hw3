@@ -84,7 +84,8 @@ void* handle_client(void* arg) {
             pthread_mutex_unlock(&lock);
             free(guess);
             close(cSocket);
-            pthread_exit(NULL);
+            int returnVal = 0;
+            pthread_exit(&returnVal);
         }
 
         for(int j = 0; j < 5; j++){
