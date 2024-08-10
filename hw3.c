@@ -48,7 +48,7 @@ void* handle_client(void* arg) {
     char* hidden_word = *(words + (rand()%numWords));
     pthread_mutex_unlock(&lock);
 
-    words = realloc(words, ansIndex + 1, sizeof(char*));
+    words = realloc(words, (ansIndex + 1 * sizeof(char*)));
     *(words+ansIndex) = hidden_word;
     ansIndex++;
 
