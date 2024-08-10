@@ -249,25 +249,21 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    words = calloc(numWords + 1, sizeof(char*));
-    if (!words) {
+    dict = calloc(numWords + 1, sizeof(char*));
+    if (!dict) {
         fprintf(stderr, "ERROR: calloc() failed\n");
         fclose(file);
         return EXIT_FAILURE;
     }
 
-    answers = calloc(4, sizeof(char*));
-    if (!answers) {
-        fprintf(stderr, "ERROR: calloc() failed\n");
-        free(words);
-        fclose(file);
-        return EXIT_FAILURE;
-    }
 
     char *word = calloc(6, sizeof(char));
     if (!word) {
         fprintf(stderr, "ERROR: calloc() failed\n");
-        free(words);
+        for (int i = 0; *(dict+i); i++) {
+            free(*(dict+i));
+        }
+        free(dict);
         free(answers);
         fclose(file);
         return EXIT_FAILURE;
@@ -295,8 +291,10 @@ int wordle_server(int argc, char **argv) {
     fprintf(stdout, "MAIN: opened %s (%d words)\n", argv[3], i);
     if (pthread_mutex_init(&lock, NULL) != 0) {
         fprintf(stderr, "ERROR: pthread_mutex_init() failed\n");
-        free(words);
-        free(answers);
+        for (int i = 0; *(dict+i); i++) {
+            free(*(dict+i));
+        }
+        free(dict);
         return EXIT_FAILURE;
     }
 
@@ -309,8 +307,10 @@ int wordle_server(int argc, char **argv) {
     int ssocket = socket(AF_INET, SOCK_STREAM, 0);
     if (ssocket < 0) {
         fprintf(stderr, "ERROR: socket() failed\n");
-        free(words);
-        free(answers);
+        for (int i = 0; *(dict+i); i++) {
+            free(*(dict+i));
+        }
+        free(dict);
         pthread_mutex_destroy(&lock);
         return EXIT_FAILURE;
     }
@@ -324,8 +324,10 @@ int wordle_server(int argc, char **argv) {
     if (bind(ssocket, (struct sockaddr*)&sAddress, sizeof(sAddress)) < 0) {
         fprintf(stderr, "ERROR: bind() failed\n");
         close(ssocket);
-        free(words);
-        free(answers);
+        for (int i = 0; *(dict+i); i++) {
+            free(*(dict+i));
+        }
+        free(dict);
         pthread_mutex_destroy(&lock);
         return EXIT_FAILURE;
     }
@@ -333,8 +335,10 @@ int wordle_server(int argc, char **argv) {
     if (listen(ssocket, 5) < 0) {
         fprintf(stderr, "ERROR: listen() failed\n");
         close(ssocket);
-        free(words);
-        free(answers);
+        for (int i = 0; *(dict+i); i++) {
+            free(*(dict+i));
+        }
+        free(dict);
         pthread_mutex_destroy(&lock);
         return EXIT_FAILURE;
     }
