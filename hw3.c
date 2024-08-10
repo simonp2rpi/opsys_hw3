@@ -67,6 +67,11 @@ void* handle_client(void* arg) {
         }
 
         int valid = 0;
+
+        for (int j = 0; j < 5; j++){
+            *(guess+j) = tolower(*(guess+j));
+        }
+
         for (char** word = dict; *word; word++) {
             if (!strcmp(guess, *word)) {
                 valid = 1;
