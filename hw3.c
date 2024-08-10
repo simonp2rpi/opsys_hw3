@@ -21,10 +21,10 @@ int on = 1;
 void sigusr1(int sig);
 void* handle_client(void* arg);
 char* guessWord(const char* guess, const char* hidden_word, int* guesses_left);
-int wordle_server(int argc, char **argv);
+int wordle_server( int argc, char ** argv );
 
 void sigusr1(int sig) {
-    on = 0;
+    on = 0; 
     fprintf(stdout, "MAIN: SIGUSR1 received; Wordle server shutting down...\n");
     fprintf(stdout, "MAIN: valid guesses: %d\n", total_guesses);
     fprintf(stdout, "MAIN: win/loss: %d/%d\n", total_wins, total_losses);
@@ -45,36 +45,16 @@ void* handle_client(void* arg) {
     pthread_t thread_id = pthread_self();
 
     pthread_mutex_lock(&lock);
-    char* hidden_word = *(words + (rand() % numWords));
+    char* hidden_word = *(words + (rand()%numWords));
     pthread_mutex_unlock(&lock);
 
-    // Ensure answers array has enough space
-    if (ansIndex >= 4) {
-        // Resize answers array
-        words = realloc(words, (ansIndex + 1) * sizeof(char*));
-        if (!words) {
-            fprintf(stderr, "ERROR: realloc() failed\n");
-            close(cSocket);
-            pthread_exit(NULL);
-        }
-    }
-    *(words + ansIndex) = strdup(hidden_word);
-    if (!*(words + ansIndex)) {
-        fprintf(stderr, "ERROR: strdup() failed\n");
-        close(cSocket);
-        pthread_exit(NULL);
-    }
+    words = realloc(words, ansIndex + 1, sizeof(char*));
+    *(words+ansIndex) = hidden_word;
     ansIndex++;
 
     int guesses = 6;
     while (guesses > 0) {
-        char *guess = calloc(6, sizeof(char));
-        if (!guess) {
-            fprintf(stderr, "ERROR: calloc() failed\n");
-            close(cSocket);
-            pthread_exit(NULL);
-        }
-
+        char *guess = calloc(6,sizeof(char));
         fprintf(stdout, "THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
         int bytes_received = recv(cSocket, guess, 5, 0);
         if (bytes_received <= 0) {
@@ -82,14 +62,8 @@ void* handle_client(void* arg) {
             pthread_mutex_lock(&lock);
             total_losses++;
             pthread_mutex_unlock(&lock);
-            free(guess);
             close(cSocket);
-            int returnVal = 0;
-            pthread_exit(&returnVal);
-        }
-
-        for(int j = 0; j < 5; j++){
-            *(guess+j) = tolower(*(guess+j));
+            pthread_exit(NULL);
         }
 
         int valid = 0;
@@ -101,113 +75,95 @@ void* handle_client(void* arg) {
         }
         fprintf(stdout, "THREAD %lu: rcvd guess: %s\n", (unsigned long)thread_id, guess);
         
-
-        char* wordle = calloc(8, sizeof(char));
-        if (!wordle) {
-            fprintf(stderr, "ERROR: calloc() failed\n");
-            free(guess);
-            close(cSocket);
-            pthread_exit(NULL);
+        //only if valid guess
+        if(valid){
+            total_guesses++;
+            printf("THREAD %lu: sending reply: ",(unsigned long)thread_id);
+        }
+        else if(!valid){
+            fprintf(stdout, "THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
         }
 
-        if (!valid) {
-            fprintf(stdout, "THREAD %lu: invalid guess; sending reply: ????? (%d guesses left)\n", (unsigned long)thread_id, guesses);
-            *(wordle + 0) = 'N';
-            *(short*)(wordle + 1) = htons(guesses);
-            memcpy(wordle + 3, "?????", 5);
-            send(cSocket, wordle, 8, 0);
-            free(wordle);
-        } else {
-            total_guesses++;
-            fprintf(stdout, "THREAD %lu: sending reply: ",(unsigned long)thread_id);
-            *(wordle + 0) = 'Y';
-            guesses--;
+        char* wordle = calloc(9, sizeof(char));
+        // wordle = guessWord(guess, hidden_word, &guesses);
 
-            char *result = calloc(6, sizeof(char));
-            int *ret = calloc(5, sizeof(int));
+    if (!wordle) {
+        fprintf(stderr,("ERROR: calloc() failed"));
+        return NULL;
+    }
 
-            if (!result || !ret) {
-                fprintf(stderr, "ERROR: calloc() failed\n");
-                free(wordle);
-                free(guess);
-                close(cSocket);
-                pthread_exit(NULL);
-            }
-            int valid2 = 0;
-            for (char** word = dict; *word; word++) {
-                if (!strcmp(guess, *word)) {
-                    valid2 = 1;
-                    break;
-                }
-            }
+    int valid2 = 0;
+    for (char** word = dict; *word; word++) {
+        if (!strcmp(guess, *word)) {
+            valid2 = 1;
+            break;
+        }
+    }
 
-            if (!valid2 || wordle == NULL) {
-                *(wordle+0) = 'N';
-                *(short*)(wordle + 1) = htons(guesses);
-                memcpy(wordle + 3, "?????", 5);
-                send(cSocket, wordle, 8, 0);
-                if(wordle != NULL){
-                    free(wordle);
-                }
-                free(ret);
-                free(result);
-            }else{ 
+    if (!valid2 || wordle == NULL) {
+        *(wordle+0) = 'N';
+        *(short*)(wordle + 1) = htons(guesses);
+        memcpy(wordle + 3, "?????", 5);
+    }else{ 
 
+        *(wordle+0) = 'Y';
+        (guesses)--;
 
-                char *result = calloc(6, sizeof(char));   
-                strcpy(result, "-----");
+        char *result = calloc(6, sizeof(char));   
+        strcpy(result, "-----");
+        int *ret = calloc(5,sizeof(int)); 
 
-                int *ret = calloc(5,sizeof(int)); 
-
-                for (int i = 0; i < 5; i++) {
-                    if (*(guess+i) == *(hidden_word+i)) {
-                        *(result+i) = toupper(*(guess+i));
-                        *(ret+i) = 1;
-                    } else if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
-                        *(result+i) = toupper(*(guess+i));
-                    }  else if (!*(ret+i)) {
-                        for (int j = 0; j < 5; j++) {
-                            if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
-                                *(result+i) = tolower(*(guess+i));
-                                *(ret+j) = 1;
-                                break;
-                            }
-                        }
+        for (int i = 0; i < 5; i++) {
+            if (*(guess+i) == *(hidden_word+i)) {
+                *(result+i) = toupper(*(guess+i));
+                *(ret+i) = 1;
+            } else if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
+                *(result+i) = toupper(*(guess+i));
+            }  else if (!*(ret+i)) {
+                for (int j = 0; j < 5; j++) {
+                    if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
+                        *(result+i) = tolower(*(guess+i));
+                        *(ret+j) = 1;
+                        break;
                     }
                 }
-                *(short*)(wordle + 1) = htons(guesses);
-                memcpy(wordle + 3, result, 5);
-                if (guesses == 1) {
-                    fprintf(stdout, "%s  (%d guess remaining)\n", result, guesses);
-                } else {
-                    fprintf(stdout, "%s  (%d guesses remaining)\n", result, guesses);
-                }
-                free(result);
-                free(ret);
-                send(cSocket, wordle, 8, 0);
-                free(wordle);
-                if (strcmp(guess, hidden_word) == 0) {
-                    fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
-                    pthread_mutex_lock(&lock);
-                    total_wins++;
-                    pthread_mutex_unlock(&lock);
-                    free(guess);
-                    break;
-                } else if (guesses == 0) {
-                    fprintf(stdout, "THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
-                    pthread_mutex_lock(&lock);
-                    total_losses++;
-                    pthread_mutex_unlock(&lock);
-                    free(guess);
-                    break;
-                }
             }
         }
+
+        *(short*)(wordle + 1) = htons(guesses);
+        memcpy(wordle + 3, result, 5);
+        if(guesses == 1){
+                fprintf(stdout, "%s  (%d guess remaining)\n", result, guesses);
+        }else{
+            fprintf(stdout, "%s  (%d guesses remaining)\n", result, guesses);
+        }
+        free(ret);
+        free(result);
+    }
+        send(cSocket, wordle, 8, 0);
+        free(wordle);
+        if (strcmp(guess, hidden_word) == 0) {
+            fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
+            pthread_mutex_lock(&lock);
+            total_wins++;
+            pthread_mutex_unlock(&lock);
+            free(guess);
+            break;
+        } else if (guesses == 0) {
+            fprintf(stdout, "THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
+            pthread_mutex_lock(&lock);
+            total_losses++;
+            pthread_mutex_unlock(&lock);
+            free(guess);
+            break;
+        }
+        
         free(guess);
     }
     close(cSocket);
     pthread_exit(NULL);
 }
+
 
 int wordle_server(int argc, char **argv) {
     if (argc != 5) {
@@ -216,36 +172,25 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    int seed = atoi(argv[2]);
-    numWords = atoi(argv[4]);
+    int seed = atoi(*(argv+2));
+    numWords = atoi(*(argv+4));
 
     srand(seed);
 
-    FILE *file = fopen(argv[3], "r");
+    FILE *file = fopen(*(argv+3), "r");
     if (!file) {
-        fprintf(stderr, "ERROR: failure opening file\n");
-        return EXIT_FAILURE;
+        fprintf(stderr,("ERROR: failure opening file"));
+        exit(EXIT_FAILURE);
     }
 
     dict = calloc(numWords + 1, sizeof(char*));
     if (!dict) {
-        fprintf(stderr, "ERROR: calloc() failed\n");
-        fclose(file);
-        return EXIT_FAILURE;
+        fprintf(stderr,("ERROR: calloc() failed"));
+        exit(EXIT_FAILURE);
     }
 
 
-    char *word = calloc(6, sizeof(char));
-    if (!word) {
-        fprintf(stderr, "ERROR: calloc() failed\n");
-        for (int i = 0; *(dict+i); i++) {
-            free(*(dict+i));
-        }
-        free(dict);
-        fclose(file);
-        return EXIT_FAILURE;
-    }
-
+    char *word = calloc(6,sizeof(char));
     int i = 0;
     while (fscanf(file, "%5s", word) == 1 && i < numWords) {
         *(dict+i) = calloc(strlen(word) + 1, sizeof(char));
@@ -263,15 +208,9 @@ int wordle_server(int argc, char **argv) {
 
     *(dict+i) = NULL; 
     fclose(file);
-    free(word);
-
-    fprintf(stdout, "MAIN: opened %s (%d words)\n", argv[3], i);
+    fprintf(stdout, "MAIN: opened %s (%d words)\n", *(argv+3), i);
     if (pthread_mutex_init(&lock, NULL) != 0) {
-        fprintf(stderr, "ERROR: pthread_mutex_init() failed\n");
-        for (int i = 0; *(dict+i); i++) {
-            free(*(dict+i));
-        }
-        free(dict);
+        fprintf(stderr,("ERROR: pthread_mutex_init() failed"));
         return EXIT_FAILURE;
     }
 
@@ -283,12 +222,7 @@ int wordle_server(int argc, char **argv) {
 
     int ssocket = socket(AF_INET, SOCK_STREAM, 0);
     if (ssocket < 0) {
-        fprintf(stderr, "ERROR: socket() failed\n");
-        for (int i = 0; *(dict+i); i++) {
-            free(*(dict+i));
-        }
-        free(dict);
-        pthread_mutex_destroy(&lock);
+        fprintf(stderr,("ERROR: socket() failed"));
         return EXIT_FAILURE;
     }
 
@@ -296,58 +230,49 @@ int wordle_server(int argc, char **argv) {
     memset(&sAddress, 0, sizeof(sAddress));
     sAddress.sin_family = AF_INET;
     sAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    sAddress.sin_port = htons(atoi(argv[1]));
+    sAddress.sin_port = htons(atoi(*(argv+1)));
 
     if (bind(ssocket, (struct sockaddr*)&sAddress, sizeof(sAddress)) < 0) {
-        fprintf(stderr, "ERROR: bind() failed\n");
+        fprintf(stderr,("ERROR: bind() failed"));
         close(ssocket);
-        for (int i = 0; *(dict+i); i++) {
-            free(*(dict+i));
-        }
-        free(dict);
-        pthread_mutex_destroy(&lock);
         return EXIT_FAILURE;
     }
 
     if (listen(ssocket, 5) < 0) {
-        fprintf(stderr, "ERROR: listen() failed\n");
+        fprintf(stderr,("ERROR: listen() failed"));
         close(ssocket);
-        for (int i = 0; *(dict+i); i++) {
-            free(*(dict+i));
-        }
-        free(dict);
-        pthread_mutex_destroy(&lock);
         return EXIT_FAILURE;
     }
 
-    fprintf(stdout, "MAIN: Wordle server listening on port {%d}\n", atoi(argv[1]));
-    fprintf(stdout, "MAIN: seeded pseudo-random number generator with %d\n", atoi(argv[2]));
+    fprintf(stdout, "MAIN: Wordle server listening on port {%d}\n",atoi(*(argv+1)));
+    fprintf(stdout, "MAIN: seeded pseudo-random number generator with %d\n", atoi(*(argv+2)));
 
-    while (on) {
+        while (on) {
         struct sockaddr_in cAddress;
         socklen_t client_len = sizeof(cAddress);
-        int* csocket = calloc(1, sizeof(int));
+        int* csocket = malloc(sizeof(int));
         if (!csocket) {
-            fprintf(stderr, "ERROR: malloc() failed\n");
+            fprintf(stderr,("ERROR: malloc() failed"));
             continue;
         }
 
         *csocket = accept(ssocket, (struct sockaddr*)&cAddress, &client_len);
         if (*csocket < 0) {
-            fprintf(stderr, "ERROR: accept() failed\n");
+            fprintf(stderr,("ERROR: accept() failed"));
             free(csocket);
             continue;
         }
 
-        fprintf(stdout, "MAIN: rcvd incoming connection request\n");
+        printf("MAIN: rcvd incoming connection request\n");
         
         pthread_t thread;
         pthread_create(&thread, NULL, handle_client, csocket);
         pthread_detach(thread);
     }
-
     close(ssocket);
     pthread_mutex_destroy(&lock);
+
+    
 
     fprintf(stdout, "MAIN: Wordle server shut down successfully\n");
     return EXIT_SUCCESS;
