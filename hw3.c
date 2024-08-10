@@ -119,6 +119,8 @@ void* handle_client(void* arg) {
             *(wordle + 0) = 'N';
             *(short*)(wordle + 1) = htons(guesses);
             memcpy(wordle + 3, "?????", 5);
+            send(cSocket, wordle, 8, 0);
+            free(wordle);
         } else {
             total_guesses++;
             *(wordle + 0) = 'Y';
@@ -131,104 +133,105 @@ void* handle_client(void* arg) {
                 fprintf(stderr, "ERROR: calloc() failed\n");
                 free(wordle);
                 free(guess);
-                free(result);
-                free(ret);
                 close(cSocket);
                 pthread_exit(NULL);
             }
-
-    int valid2 = 0;
-    for (char** word = dict; *word; word++) {
-        if (!strcmp(guess, *word)) {
-            valid2 = 1;
-            break;
-        }
-    }
-
-    if (!valid2 || wordle == NULL) {
-        *(wordle+0) = 'N';
-        *(short*)(wordle + 1) = htons(guesses);
-        memcpy(wordle + 3, "?????", 5);
-    }else{ 
-
-        *(wordle+0) = 'Y';
-        (guesses)--;
-
-        char *result = calloc(6, sizeof(char));   
-        strcpy(result, "-----");
-
-        int *ret = calloc(5,sizeof(int)); 
-
-        for (int i = 0; i < 5; i++) {
-            if (*(guess+i) == *(hidden_word+i)) {
-                *(result+i) = toupper(*(guess+i));
-                *(ret+i) = 1;
-            } else if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
-                *(result+i) = toupper(*(guess+i));
-            }  else if (!*(ret+i)) {
-                for (int j = 0; j < 5; j++) {
-                    if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
-                        *(result+i) = tolower(*(guess+i));
-                        *(ret+j) = 1;
-                        break;
-                    }
+            int valid2 = 0;
+            for (char** word = dict; *word; word++) {
+                if (!strcmp(guess, *word)) {
+                    valid2 = 1;
+                    break;
                 }
             }
-        }
-        *(short*)(wordle + 1) = htons(guesses);
-        memcpy(wordle + 3, result, 5);
-        if(guesses == 1){
-            strcpy(result, "-----");
-            for (int i = 0; i < 5; i++) {
-                if (*(guess + i) == *(hidden_word + i)) {
-                    *(result + i) = toupper(*(guess + i));
-                    *(ret + i) = 1;
-                } else if (*(guess + i) != '\0' && *(guess + i) == *(hidden_word + i) && isalpha(*(guess + i))) {
-                    *(result + i) = toupper(*(guess + i));
-                } else if (!*(ret + i)) {
-                    for (int j = 0; j < 5; j++) {
-                        if (!*(ret + j) && *(guess + i) == *(hidden_word + j)) {
-                            *(result + i) = tolower(*(guess + i));
-                            *(ret + j) = 1;
-                            break;
+
+            if (!valid2 || wordle == NULL) {
+                *(wordle+0) = 'N';
+                *(short*)(wordle + 1) = htons(guesses);
+                memcpy(wordle + 3, "?????", 5);
+                send(cSocket, wordle, 8, 0);
+                free(wordle);
+                free(ret);
+                free(result);
+            }else{ 
+
+                *(wordle+0) = 'Y';
+                (guesses)--;
+
+                char *result = calloc(6, sizeof(char));   
+                strcpy(result, "-----");
+
+                int *ret = calloc(5,sizeof(int)); 
+
+                for (int i = 0; i < 5; i++) {
+                    if (*(guess+i) == *(hidden_word+i)) {
+                        *(result+i) = toupper(*(guess+i));
+                        *(ret+i) = 1;
+                    } else if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
+                        *(result+i) = toupper(*(guess+i));
+                    }  else if (!*(ret+i)) {
+                        for (int j = 0; j < 5; j++) {
+                            if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
+                                *(result+i) = tolower(*(guess+i));
+                                *(ret+j) = 1;
+                                break;
+                            }
                         }
                     }
                 }
-            }
+                *(short*)(wordle + 1) = htons(guesses);
+                memcpy(wordle + 3, result, 5);
+                if(guesses == 1){
+                    strcpy(result, "-----");
+                    for (int i = 0; i < 5; i++) {
+                        if (*(guess + i) == *(hidden_word + i)) {
+                            *(result + i) = toupper(*(guess + i));
+                            *(ret + i) = 1;
+                        } else if (*(guess + i) != '\0' && *(guess + i) == *(hidden_word + i) && isalpha(*(guess + i))) {
+                            *(result + i) = toupper(*(guess + i));
+                        } else if (!*(ret + i)) {
+                            for (int j = 0; j < 5; j++) {
+                                if (!*(ret + j) && *(guess + i) == *(hidden_word + j)) {
+                                    *(result + i) = tolower(*(guess + i));
+                                    *(ret + j) = 1;
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
-            *(short*)(wordle + 1) = htons(guesses);
-            memcpy(wordle + 3, result, 5);
-            if (guesses == 1) {
-                fprintf(stdout, "%s  (%d guess remaining)\n", result, guesses);
-            } else {
-                fprintf(stdout, "%s  (%d guesses remaining)\n", result, guesses);
+                    *(short*)(wordle + 1) = htons(guesses);
+                    memcpy(wordle + 3, result, 5);
+                    if (guesses == 1) {
+                        fprintf(stdout, "%s  (%d guess remaining)\n", result, guesses);
+                    } else {
+                        fprintf(stdout, "%s  (%d guesses remaining)\n", result, guesses);
+                    }
+                    free(result);
+                    free(ret);
+                }
+                send(cSocket, wordle, 8, 0);
+                free(wordle);
+                if (strcmp(guess, hidden_word) == 0) {
+                    fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
+                    pthread_mutex_lock(&lock);
+                    total_wins++;
+                    pthread_mutex_unlock(&lock);
+                    free(guess);
+                    break;
+                } else if (guesses == 0) {
+                    fprintf(stdout, "THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
+                    pthread_mutex_lock(&lock);
+                    total_losses++;
+                    pthread_mutex_unlock(&lock);
+                    free(guess);
+                    break;
+                }
             }
-            free(result);
-            free(ret);
-        }
-        send(cSocket, wordle, 8, 0);
-        free(wordle);
-        if (strcmp(guess, hidden_word) == 0) {
-            fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
-            pthread_mutex_lock(&lock);
-            total_wins++;
-            pthread_mutex_unlock(&lock);
-            free(guess);
-            break;
-        } else if (guesses == 0) {
-            fprintf(stdout, "THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
-            pthread_mutex_lock(&lock);
-            total_losses++;
-            pthread_mutex_unlock(&lock);
-            free(guess);
-            break;
         }
         free(guess);
     }
     close(cSocket);
     pthread_exit(NULL);
-}
-    }
 }
 
 int wordle_server(int argc, char **argv) {
@@ -264,7 +267,6 @@ int wordle_server(int argc, char **argv) {
             free(*(dict+i));
         }
         free(dict);
-        free(answers);
         fclose(file);
         return EXIT_FAILURE;
     }
