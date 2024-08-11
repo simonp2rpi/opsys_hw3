@@ -149,6 +149,9 @@ void* handle_client(void* arg) {
             }
         }
 
+        free(matched);
+        free(hidden_matched);
+
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, result, 5);
         if(guesses == 1){
