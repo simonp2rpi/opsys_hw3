@@ -25,12 +25,12 @@ int wordle_server( int argc, char ** argv );
 
 void sigusr1(int sig) {
     on = 0; 
-    fprintf(stdout, "MAIN: SIGUSR1 rcvd; Wordle server shutting down...\n");
-    fprintf(stdout, "MAIN: valid guesses: %d\n", total_guesses);
-    fprintf(stdout, "MAIN: win/loss: %d/%d\n", total_wins, total_losses);
-    for (int i = 0; *(words+i); i++) {
-        fprintf(stdout, "MAIN: word #%d: %s\n", i+1, *(words+i));
-    }
+    // fprintf(stdout, "MAIN: SIGUSR1 rcvd; Wordle server shutting down...\n");
+    // fprintf(stdout, "MAIN: valid guesses: %d\n", total_guesses);
+    // fprintf(stdout, "MAIN: win/loss: %d/%d\n", total_wins, total_losses);
+    // for (int i = 0; *(words+i); i++) {
+    //     fprintf(stdout, "MAIN: word #%d: %s\n", i+1, *(words+i));
+    // }
     for (int i = 0; *(dict+i); i++) {
         free(*(dict+i));
     }
@@ -50,7 +50,7 @@ void* handle_client(void* arg) {
     pthread_mutex_unlock(&lock);
 
     words = realloc(words, ((ansIndex + 1) * sizeof(char*)));
-    *(words+ansIndex) = hidden_word;
+    strcpy(*(words+ansIndex),hidden_word);
     ansIndex++;
 
     int guesses = 6;
@@ -64,6 +64,7 @@ void* handle_client(void* arg) {
             total_losses++;
             pthread_mutex_unlock(&lock);
             free(guess);
+            free(hidden_word);
             close(cSocket);
             pthread_exit(NULL);
         }
@@ -154,6 +155,7 @@ void* handle_client(void* arg) {
             pthread_mutex_lock(&lock);
             total_wins++;
             pthread_mutex_unlock(&lock);
+            free(hidden_word);
             free(guess);
             break;
         } else if (guesses == 0) {
@@ -161,6 +163,7 @@ void* handle_client(void* arg) {
             pthread_mutex_lock(&lock);
             total_losses++;
             pthread_mutex_unlock(&lock);
+            free(hidden_word);
             free(guess);
             break;
         }
