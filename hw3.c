@@ -128,14 +128,15 @@ void* handle_client(void* arg) {
         int *ret = calloc(5,sizeof(int)); 
 
         for (int i = 0; i < 5; i++) {
-            if (*(guess+i) == *(hidden_word+i)) {
+            if (topupper(*(guess+i)) == *(hidden_word+i)) {
                 *(result+i) = toupper(*(guess+i));
                 *(ret+i) = 1;
-            } else if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
+            } else if (*(guess+i) != '\0' && topupper(*(guess+i)) == *(hidden_word+i) && isalpha(*(guess+i))) {
                 *(result+i) = toupper(*(guess+i));
+                *(ret+i) = 1;
             }  else if (!*(ret+i)) {
                 for (int j = 0; j < 5; j++) {
-                    if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
+                    if (!*(ret+j) && topupper(*(guess+i)) == *(hidden_word+j)) {
                         *(result+i) = tolower(*(guess+i));
                         *(ret+j) = 1;
                         break;
