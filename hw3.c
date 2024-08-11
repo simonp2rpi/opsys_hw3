@@ -123,41 +123,44 @@ void* handle_client(void* arg) {
         *(wordle+0) = 'Y';
         (guesses)--;
 
-        char *result = calloc(6, sizeof(char));   
-        int *matched = calloc(5, sizeof(int)); // Track matches in guess
-        int *hidden_matched = calloc(5, sizeof(int)); // Track matches in hidden word
+        char *result = calloc(6, sizeof(char));  // Resulting word string
+        int *matched = calloc(5, sizeof(int));   // Track matched characters in guess
+        int *hidden_matched = calloc(5, sizeof(int)); // Track matched characters in hidden word
 
-        // Step 1: First pass - check for correct letters in the correct position
+        // First pass: Check for correct letters in the correct position
         for (int i = 0; i < 5; i++) {
             if (*(guess + i) == *(hidden_word + i)) {
-                *(result + i) = toupper(*(guess + i));
-                *(matched + i) = 1; // Mark this position as matched
-                *(hidden_matched + i) = 1; // Mark hidden word's position as matched
+                *(result + i) = toupper(*(guess + i)); // Correct position, uppercase
+                *(matched + i) = 1;   // Mark this position as matched in guess
+                *(hidden_matched + i) = 1; // Mark this position as matched in hidden word
             }
         }
 
-        // Step 2: Second pass - check for correct letters in incorrect positions
+        // Second pass: Check for correct letters in incorrect positions
         for (int i = 0; i < 5; i++) {
             if (!(*(matched + i))) { // Only consider unmatched letters in the guess
                 for (int j = 0; j < 5; j++) {
                     if (!(*(hidden_matched + j)) && *(guess + i) == *(hidden_word + j)) {
-                        *(result + i) = tolower(*(guess + i));
-                        *(hidden_matched + j) = 1; // Mark hidden word's position as matched
+                        *(result + i) = tolower(*(guess + i)); // Incorrect position, lowercase
+                        *(hidden_matched + j) = 1; // Mark this position as matched in hidden word
                         break;
                     }
                 }
             }
         }
 
-        // Step 3: Fill in remaining unmatched letters with dashes
+        // Third pass: Fill in any unmatched positions with dashes
         for (int i = 0; i < 5; i++) {
             if (*(result + i) == 0) {
                 *(result + i) = '-';
             }
         }
 
+
+        // Free the dynamically allocated memory
         free(matched);
         free(hidden_matched);
+
 
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, result, 5);
@@ -166,7 +169,6 @@ void* handle_client(void* arg) {
         }else{
             fprintf(stdout, "%s (%d guesses left)\n", result, guesses);
         }
-        free(ret);
         free(result);
     }
         send(cSocket, wordle, 8, 0);
