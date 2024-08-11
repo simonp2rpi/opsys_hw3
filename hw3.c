@@ -133,7 +133,6 @@ void* handle_client(void* arg) {
                 *(ret+i) = 1;
             } else if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
                 *(result+i) = toupper(*(guess+i));
-                *(ret+i) = 1;
             }  else if (!*(ret+i)) {
                 for (int j = 0; j < 5; j++) {
                     if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
@@ -148,7 +147,7 @@ void* handle_client(void* arg) {
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, result, 5);
         if(guesses == 1){
-                fprintf(stdout, "%s (%d guess left)\n", result, guesses);
+            fprintf(stdout, "%s (%d guess left)\n", result, guesses);
         }else{
             fprintf(stdout, "%s (%d guesses left)\n", result, guesses);
         }
@@ -166,7 +165,7 @@ void* handle_client(void* arg) {
             free(guess);
             break;
         } else if (guesses == 0) {
-            fprintf(stdout, "THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
+            fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
             pthread_mutex_lock(&lock);
             total_losses++;
             pthread_mutex_unlock(&lock);
