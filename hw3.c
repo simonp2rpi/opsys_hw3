@@ -131,14 +131,16 @@ void* handle_client(void* arg) {
             if (*(guess+i) == *(hidden_word+i)) {
                 *(result+i) = toupper(*(guess+i));
                 *(ret+i) = 1;
-            }
-        }
-
-        for (int i = 0; i < 5; i++) {
-            for(int j = 0; j < 5; j++){
-                if (*(ret+i) == 0 && *(guess+i) == *(hidden_word+j)) {
-                    *(result+i) = tolower(*(guess+i));
-                    *(ret+i) = 1;
+            } else if (*(guess+i) != '\0' && *(guess+i) == *(hidden_word+i) && isalpha(*(guess+i))) {
+                *(result+i) = toupper(*(guess+i));
+                *(ret+i) = 1;
+            }  else if (!*(ret+i)) {
+                for (int j = 0; j < 5; j++) {
+                    if (!*(ret+j) && *(guess+i) == *(hidden_word+j)) {
+                        *(result+i) = tolower(*(guess+i));
+                        *(ret+j) = 1;
+                        break;
+                    }
                 }
             }
         }
