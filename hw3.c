@@ -117,7 +117,7 @@ void* handle_client(void* arg) {
 
         char *result = calloc(6, sizeof(char));   
         strcpy(result, "-----");
-        int *ret = calloc(5,sizeof(int)); 
+        int *ret = calloc(6,sizeof(int)); 
 
         for (int i = 0; i < 5; i++) {
             if (*(guess+i) == *(hidden_word+i)) {
