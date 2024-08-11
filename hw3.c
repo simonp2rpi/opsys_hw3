@@ -25,7 +25,7 @@ int wordle_server( int argc, char ** argv );
 
 void sigusr1(int sig) {
     on = 0; 
-    fprintf(stdout, "MAIN: SIGUSR1 received; Wordle server shutting down...\n");
+    fprintf(stdout, "MAIN: SIGUSR1 rcvd; Wordle server shutting down...\n");
     fprintf(stdout, "MAIN: valid guesses: %d\n", total_guesses);
     fprintf(stdout, "MAIN: win/loss: %d/%d\n", total_wins, total_losses);
     for (int i = 0; *(words+i); i++) {
@@ -45,7 +45,7 @@ void* handle_client(void* arg) {
     pthread_t thread_id = pthread_self();
 
     pthread_mutex_lock(&lock);
-    char* hidden_word = *(words + (rand()%numWords));
+    char* hidden_word = *(words + (rand()%(total_guesses + 1)));
     pthread_mutex_unlock(&lock);
 
     words = realloc(words, ((ansIndex + 1) * sizeof(char*)));
@@ -139,9 +139,9 @@ void* handle_client(void* arg) {
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, result, 5);
         if(guesses == 1){
-                fprintf(stdout, "%s  (%d guess remaining)\n", result, guesses);
+                fprintf(stdout, "%s  (%d guess left)\n", result, guesses);
         }else{
-            fprintf(stdout, "%s  (%d guesses remaining)\n", result, guesses);
+            fprintf(stdout, "%s  (%d guesses left)\n", result, guesses);
         }
         free(ret);
         free(result);
@@ -252,8 +252,8 @@ int wordle_server(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    fprintf(stdout, "MAIN: Wordle server listening on port {%d}\n",atoi(*(argv+1)));
     fprintf(stdout, "MAIN: seeded pseudo-random number generator with %d\n", atoi(*(argv+2)));
+    fprintf(stdout, "MAIN: Wordle server listening on port {%d}\n",atoi(*(argv+1)));
 
         while (on) {
         struct sockaddr_in cAddress;
@@ -281,6 +281,5 @@ int wordle_server(int argc, char **argv) {
 
     
 
-    fprintf(stdout, "MAIN: Wordle server shut down successfully\n");
     return EXIT_SUCCESS;
 }
