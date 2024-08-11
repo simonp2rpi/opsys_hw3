@@ -45,7 +45,8 @@ void* handle_client(void* arg) {
     pthread_t thread_id = pthread_self();
 
     pthread_mutex_lock(&lock);
-    char* hidden_word = *(words + (rand()%(total_guesses + 1)));
+    char* hidden_word = calloc(6,sizeof(char));
+    strcpy(hidden_word, *(dict + (int)(rand()%(numWords))));
     pthread_mutex_unlock(&lock);
 
     words = realloc(words, ((ansIndex + 1) * sizeof(char*)));
@@ -117,7 +118,7 @@ void* handle_client(void* arg) {
 
         char *result = calloc(6, sizeof(char));   
         strcpy(result, "-----");
-        int *ret = calloc(6,sizeof(int)); 
+        int *ret = calloc(5,sizeof(int)); 
 
         for (int i = 0; i < 5; i++) {
             if (*(guess+i) == *(hidden_word+i)) {
