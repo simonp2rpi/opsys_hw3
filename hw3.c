@@ -123,27 +123,38 @@ void* handle_client(void* arg) {
         *(wordle+0) = 'Y';
         (guesses)--;
 
-        char *result = calloc(6, sizeof(char));   
-        strcpy(result, "-----");
-        int *ret = calloc(5,sizeof(int)); 
+        char *result = calloc(6, sizeof(char));
+        int *matched1 = calloc(5, sizeof(int));
+        int *matched2 = calloc(5, sizeof(int));
 
         for (int i = 0; i < 5; i++) {
-            if (topupper(*(guess+i)) == *(hidden_word+i)) {
-                *(result+i) = toupper(*(guess+i));
-                *(ret+i) = 1;
-            } else if (*(guess+i) != '\0' && topupper(*(guess+i)) == *(hidden_word+i) && isalpha(*(guess+i))) {
-                *(result+i) = toupper(*(guess+i));
-                *(ret+i) = 1;
-            }  else if (!*(ret+i)) {
+            if (toupper(*(guess + i)) == *(hidden_word + i)) {
+                *(result + i) = toupper(*(guess + i));
+                *(matched1 + i) = 1;
+                *(matched2 + i) = 1;
+            }
+        }
+
+        for (int i = 0; i < 5; i++) {
+            if (!(*(matched1 + i))) {
                 for (int j = 0; j < 5; j++) {
-                    if (!*(ret+j) && topupper(*(guess+i)) == *(hidden_word+j)) {
-                        *(result+i) = tolower(*(guess+i));
-                        *(ret+j) = 1;
+                    if (!(*(matched2 + j)) && toupper(*(guess + i)) == *(hidden_word + j)) {
+                        *(result + i) = tolower(*(guess + i));
+                        *(matched2 + j) = 1; 
                         break;
                     }
                 }
             }
         }
+
+        for (int i = 0; i < 5; i++) {
+            if (*(result + i) == 0) {
+                *(result + i) = '-';
+            }
+        }
+
+        free(matched1);
+        free(matched2);
 
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, result, 5);
@@ -152,7 +163,6 @@ void* handle_client(void* arg) {
         }else{
             fprintf(stdout, "%s (%d guesses left)\n", result, guesses);
         }
-        free(ret);
         free(result);
     }
         send(cSocket, wordle, 8, 0);
