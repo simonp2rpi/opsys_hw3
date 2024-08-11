@@ -167,6 +167,9 @@ void* handle_client(void* arg) {
     }
         send(cSocket, wordle, 8, 0);
         free(wordle);
+        for (int j = 0; j < 5; j++){
+            *(guess+j) = toupper(*(guess+j));
+        }
         if (strcmp(guess, hidden_word) == 0) {
             fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
             pthread_mutex_lock(&lock);
