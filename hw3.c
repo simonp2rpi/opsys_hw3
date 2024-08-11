@@ -124,40 +124,24 @@ void* handle_client(void* arg) {
         (guesses)--;
 
         char *result = calloc(6, sizeof(char));   
-        int *matched = calloc(5, sizeof(int));
-        int *hidden_matched = calloc(5, sizeof(int));
+        strcpy(result, "-----");
+        int *ret = calloc(5,sizeof(int)); 
 
-        // Step 1: Check for exact matches (correct letter and position)
         for (int i = 0; i < 5; i++) {
-            if (*(guess + i) == *(hidden_word + i)) {
-                *(result + i) = toupper(*(guess + i));
-                *(matched + i) = 1;
-                *(hidden_matched + i) = 1;
+            if (*(guess+i) == *(hidden_word+i)) {
+                *(result+i) = toupper(*(guess+i));
+                *(ret+i) = 1;
             }
         }
 
-        // Step 2: Check for correct letters in wrong positions
         for (int i = 0; i < 5; i++) {
-            if (!(*(matched + i))) { // If this position hasn't been matched yet
-                for (int j = 0; j < 5; j++) {
-                    if (!(*(hidden_matched + j)) && *(guess + i) == *(hidden_word + j)) {
-                        *(result + i) = tolower(*(guess + i));
-                        *(hidden_matched + j) = 1; // Mark as matched in the hidden word
-                        break;
-                    }
+            for(int j = 0; j < 5; j++){
+                if (*(ret+i) == 0 && *(guess+i) == *(hidden_word+j)) {
+                    *(result+i) = tolower(*(guess+i));
+                    *(ret+i) = 1;
                 }
             }
         }
-
-        // Step 3: Fill in any unmatched positions with '-'
-        for (int i = 0; i < 5; i++) {
-            if (*(result + i) == 0) {
-                *(result + i) = '-';
-            }
-        }
-
-        // Print the result for debugging purposes
-        fprintf(stdout, "DEBUG: result = %s\n", result);
 
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, result, 5);
@@ -166,6 +150,7 @@ void* handle_client(void* arg) {
         }else{
             fprintf(stdout, "%s (%d guesses left)\n", result, guesses);
         }
+        free(ret);
         free(result);
     }
         send(cSocket, wordle, 8, 0);
