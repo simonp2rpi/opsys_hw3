@@ -124,28 +124,35 @@ void* handle_client(void* arg) {
         (guesses)--;
 
         char *result = calloc(6, sizeof(char));   
-        strcpy(result, "-----");
         int *matched = calloc(5, sizeof(int)); // Track matches in guess
         int *hidden_matched = calloc(5, sizeof(int)); // Track matches in hidden word
 
-
+        // Step 1: First pass - check for correct letters in the correct position
         for (int i = 0; i < 5; i++) {
-            if (*(guess + i) == hidden_word[i]) {
-                *(result+ i) = toupper(*(guess + i));
-                *(matched+ i) = 1;
-                *(hidden_matched+ i) = 1;
+            if (*(guess + i) == *(hidden_word + i)) {
+                *(result + i) = toupper(*(guess + i));
+                *(matched + i) = 1; // Mark this position as matched
+                *(hidden_matched + i) = 1; // Mark hidden word's position as matched
             }
         }
 
+        // Step 2: Second pass - check for correct letters in incorrect positions
         for (int i = 0; i < 5; i++) {
-            if (!*(matched+ i)) {
+            if (!(*(matched + i))) { // Only consider unmatched letters in the guess
                 for (int j = 0; j < 5; j++) {
-                    if (!*(hidden_matched+ j) && *(guess + i) == *(hidden_word+ j)) {
-                        *(result+ i) = tolower(*(guess + i));
-                        *(hidden_matched+ j) = 1;
+                    if (!(*(hidden_matched + j)) && *(guess + i) == *(hidden_word + j)) {
+                        *(result + i) = tolower(*(guess + i));
+                        *(hidden_matched + j) = 1; // Mark hidden word's position as matched
                         break;
                     }
                 }
+            }
+        }
+
+        // Step 3: Fill in remaining unmatched letters with dashes
+        for (int i = 0; i < 5; i++) {
+            if (*(result + i) == 0) {
+                *(result + i) = '-';
             }
         }
 
@@ -155,10 +162,11 @@ void* handle_client(void* arg) {
         *(short*)(wordle + 1) = htons(guesses);
         memcpy(wordle + 3, result, 5);
         if(guesses == 1){
-            fprintf(stdout, "%s (%d guess left)\n", result, guesses);
+                fprintf(stdout, "%s (%d guess left)\n", result, guesses);
         }else{
             fprintf(stdout, "%s (%d guesses left)\n", result, guesses);
         }
+        free(ret);
         free(result);
     }
         send(cSocket, wordle, 8, 0);
@@ -172,7 +180,7 @@ void* handle_client(void* arg) {
             free(guess);
             break;
         } else if (guesses == 0) {
-            fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
+            fprintf(stdout, "THREAD %lu: out of guesses; word was %s!\n", (unsigned long)thread_id, hidden_word);
             pthread_mutex_lock(&lock);
             total_losses++;
             pthread_mutex_unlock(&lock);
