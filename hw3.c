@@ -49,7 +49,15 @@ void* handle_client(void* arg) {
     strcpy(hidden_word, *(dict + (int)(rand()%(numWords))));
     pthread_mutex_unlock(&lock);
 
+    char **tmp = realloc(words, ((ansIndex + 1) * sizeof(char*)));
+    if (tmp == NULL) {
+        perror("realloc failed");
+        exit(EXIT_FAILURE);
+    }
+    words = tmp;
+
     words = realloc(words, ((ansIndex + 1) * sizeof(char*)));
+    *(words+ansIndex) = calloc(6,sizeof(char));
     strcpy(*(words+ansIndex),hidden_word);
     ansIndex++;
 
