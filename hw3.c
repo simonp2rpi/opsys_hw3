@@ -15,6 +15,7 @@ char **dict = NULL;
 int ansIndex = 0;
 int numWords = 0;
 
+pthread_key_t key;
 pthread_mutex_t lock;
 int on = 1;
 
@@ -38,6 +39,8 @@ void* handle_client(void* arg) {
     free(arg);
 
     pthread_t thread_id = pthread_self();
+    int *threadSpec = calloc(1, sizeof(int));
+    pthread_setspecific(key, threadSpec);
 
     pthread_mutex_lock(&lock);
     char* hidden_word = calloc(6,sizeof(char));
