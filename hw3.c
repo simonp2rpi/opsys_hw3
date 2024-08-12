@@ -75,6 +75,7 @@ void* handle_client(void* arg) {
             pthread_mutex_unlock(&lock);
             free(guess);
             free(hidden_word);
+            free(threadSpec);
             close(cSocket);
             pthread_exit(NULL);
         }
@@ -179,6 +180,7 @@ void* handle_client(void* arg) {
             total_wins++;
             pthread_mutex_unlock(&lock);
             free(hidden_word);
+            free(threadSpec);
             free(guess);
             break;
         } else if (guesses == 0) {
@@ -187,6 +189,7 @@ void* handle_client(void* arg) {
             total_losses++;
             pthread_mutex_unlock(&lock);
             free(hidden_word);
+            free(threadSpec);
             free(guess);
             break;
         }
