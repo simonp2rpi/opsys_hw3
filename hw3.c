@@ -204,10 +204,6 @@ int wordle_server(int argc, char **argv) {
 
     int seed = atoi(*(argv+2));
     numWords = atoi(*(argv+4));
-    if(seed < 0 || numWords <0 || seed >numWords){
-        fprintf(stderr, "ERROR: wrong seed/numWords\n");
-        return EXIT_FAILURE;
-    }
 
     srand(seed);
 
