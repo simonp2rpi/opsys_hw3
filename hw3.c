@@ -63,7 +63,7 @@ void* handle_client(void* arg) {
     while (guesses > 0) {
         char *guess = calloc(6,sizeof(char));
         fprintf(stdout, "THREAD %lu: waiting for guess\n", (unsigned long)thread_id);
-        int bytes_received = recv(cSocket, guess, 5, 0);
+        int bytes_received = recv(cSocket, guess, 5, MSG_WAITALL);
         if (bytes_received <= 0) {
             fprintf(stdout, "THREAD %lu: client gave up; closing TCP connection...\n", (unsigned long)thread_id);
             fprintf(stdout, "THREAD %lu: game over; word was %s!\n", (unsigned long)thread_id, hidden_word);
@@ -204,6 +204,10 @@ int wordle_server(int argc, char **argv) {
 
     int seed = atoi(*(argv+2));
     numWords = atoi(*(argv+4));
+    if(seed < 0 || numWords <0 || seed >numWords){
+        fprintf(stderr, "ERROR: wrong seed/numWords\n");
+        return EXIT_FAILURE;
+    }
 
     srand(seed);
 
